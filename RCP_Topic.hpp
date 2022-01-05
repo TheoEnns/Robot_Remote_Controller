@@ -58,6 +58,8 @@ class RCPTopic{
     rcp_size_t     _size; 
     binary_t*   _data; 
     bool        _isDataFresh;
+    bool        _isDisplayFresh;
+    bool        _doesTransmit;
     // void        freeData();
 
     String _displayText;
@@ -67,7 +69,7 @@ class RCPTopic{
     binary_t _color_b;
 
   public:
-    RCPTopic(RCP_cat_t category, ID_t id, String name);
+    RCPTopic(RCP_cat_t category, ID_t id, String name, bool doesTransmit);
     ~RCPTopic();
 
     // void setName(String name);
@@ -103,7 +105,7 @@ class RCPTopic{
     bool getMSG_changeColor(binary_t* data, rcp_size_t* length);
 };
 
-RCPTopic* CreateTopic(RCP_cat_t category, String name);
+RCPTopic* CreateTopic(RCP_cat_t category, String name, bool doesTransmit);
 void getArrayFromCategory(RCP_cat_t category, rcp_size_t** size, RCPTopic**topicList);
 
 RCPTopic* rcpOperationsList[MAX_TOPIC_ID];      // For operational control values, Client inits and then Controller and client update
@@ -143,7 +145,7 @@ void getArrayFromCategory(RCP_cat_t category, rcp_size_t** size, RCPTopic*** top
   }
 }
 
-RCPTopic* CreateTopic(RCP_cat_t category, String name){
+RCPTopic* CreateTopic(RCP_cat_t category, String name, bool doesTransmit){
   rcp_size_t * currentIDs;
   RCPTopic ** array;
   getArrayFromCategory(category, &currentIDs, &array);
@@ -154,11 +156,11 @@ RCPTopic* CreateTopic(RCP_cat_t category, String name){
 
   ID_t newID = (ID_t) *currentIDs;
   currentIDs++;
-  RCPTopic* newTopic = new RCPTopic(category, newID, name);
+  RCPTopic* newTopic = new RCPTopic(category, newID, name, doesTransmit);
   array[newID] = newTopic;
 }
 
-RCPTopic::RCPTopic(RCP_cat_t category, ID_t id, String name){
+RCPTopic::RCPTopic(RCP_cat_t category, ID_t id, String name, bool doesTransmit){
   _category = category;
   _id = id;
   _displayName = name;
@@ -173,6 +175,8 @@ RCPTopic::RCPTopic(RCP_cat_t category, ID_t id, String name){
   _size = 0;
   _data = NULL;
   _isDataFresh = true;
+  _isDisplayFresh = true;
+  _doesTransmit = doesTransmit;
 
   _displayText = "NULL";
   _color_r = 255;		         
