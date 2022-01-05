@@ -23,12 +23,12 @@ typedef enum{
 }RCP_type_t;
 
 typedef enum{
-  RCP_CAT_PROPERTY=0,
+  RCP_CAT_OPERATIONS=0,
   RCP_CAT_CONFIGURATION,
   RCP_CAT_STATUS,
-  RCP_CAT_INFORMATION,
   RCP_CAT_LOGS,
   RCP_CAT_SETTINGS,
+  RCP_CAT_HIDDENS,
   NUM_CAT_TYPES
 }RCP_cat_t;
 
@@ -38,13 +38,13 @@ typedef enum{
   RCP_MODE_STOP,
   RCP_MODE_IDLE,
   NUM_MODE_TYPES
-}RCP_mode_t;
+}RCP_mode_t; // Note must fit in a char
 
 typedef uint8_t ID_t;
-#define MAX_TOPIC_ID 256 //Maximum IDs that can be registered to a category
-typedef uint8_t sizeT_t;
+typedef uint8_t rcp_size_t;
 typedef uint8_t binary_t;
 
+#define MAX_TOPIC_ID 256 //Maximum IDs that can be registered to a category
 #define MAX_TOPIC_DATA_LENGTH 128
 #define MAX_TOPIC_NAME_LENGTH 21
 
@@ -53,9 +53,9 @@ class RCPTopic{
     RCP_cat_t   _category;
     ID_t        _id;
     RCP_type_t  _type;
-    sizeT_t     _name_length; 
+    rcp_size_t     _name_length; 
     binary_t*   _name; 
-    sizeT_t     _size; 
+    rcp_size_t     _size; 
     binary_t*   _data; 
     bool        _isDataFresh;
     // void        freeData();
@@ -71,9 +71,9 @@ class RCPTopic{
     ~RCPTopic();
 
     // void setName(String name);
-    // void setName(binary_t data[], sizeT_t name_length);
+    // void setName(binary_t data[], rcp_size_t name_length);
     void setString(String data);
-    void setByteArray(binary_t* data, sizeT_t length); //does not copy!
+    void setByteArray(binary_t* data, rcp_size_t length); //does not copy!
     void setFloat(float32_t data);
     void setLong(long64_t data);
     void setInt(int32_t data);
@@ -83,9 +83,9 @@ class RCPTopic{
     void setFresh();
 
     String getName();
-    sizeT_t getNameLength();
+    rcp_size_t getNameLength();
     String getString();
-    binary_t* getByteArray(sizeT_t* length); //not a copy
+    binary_t* getByteArray(rcp_size_t* length); //not a copy
     float32_t getFloat();
     long64_t getLong();
     int32_t getInt();
@@ -97,11 +97,66 @@ class RCPTopic{
     String valueToDisplay();
     void setColor(binary_t color_r, binary_t color_g, binary_t color_b);
 
-    bool getMSG_announceTopic(binary_t* data, size_t* length);
-    bool getMSG_publishTopic(binary_t* data, size_t* length);
-    bool getMSG_changeColor(binary_t color_r, binary_t color_g, binary_t color_b, binary_t* data, size_t* length);
-    bool getMSG_changeColor(binary_t* data, size_t* length);
+    bool getMSG_announceTopic(binary_t* data, rcp_size_t* length);
+    bool getMSG_publishTopic(binary_t* data, rcp_size_t* length);
+    bool getMSG_changeColor(binary_t color_r, binary_t color_g, binary_t color_b, binary_t* data, rcp_size_t* length);
+    bool getMSG_changeColor(binary_t* data, rcp_size_t* length);
 };
+
+RCPTopic* CreateTopic(RCP_cat_t category, String name);
+void getArrayFromCategory(RCP_cat_t category, rcp_size_t** size, RCPTopic**topicList);
+
+RCPTopic* rcpOperationsList[MAX_TOPIC_ID];      // For operational control values, Client inits and then Controller and client update
+rcp_size_t Operations_RCP_Count = 0;
+RCPTopic* rcpConfigurationsList[MAX_TOPIC_ID];  // For configuration values,  Client inits and then Controller updates
+rcp_size_t Configurations_RCP_Count = 0;
+RCPTopic* rcpStatusList[MAX_TOPIC_ID];          // For status values, Client inits and updates its own, Controller displays only
+rcp_size_t Status_RCP_Count = 0;
+RCPTopic* rcpLogsList[MAX_TOPIC_ID];            // For log transmition, universal init but client updates, gets saved to SD card
+rcp_size_t Logs_RCP_Count = 0;
+RCPTopic* rcpSettingsList[MAX_TOPIC_ID];        // For controller settings, universal init and controller updates
+rcp_size_t Settings_RCP_Count = 0;
+RCPTopic* rcpHiddensList[MAX_TOPIC_ID];         // For controller publication, universal init and controller updates but not user visible
+rcp_size_t Hiddens_RCP_Count = 0;
+
+//Implementation
+void getArrayFromCategory(RCP_cat_t category, rcp_size_t** size, RCPTopic*** topicList){
+  switch(category){
+    case(RCP_CAT_OPERATIONS):
+      *size = &Operations_RCP_Count;
+      *topicList = rcpOperationsList;
+    case(RCP_CAT_CONFIGURATION):
+      *size = &Configurations_RCP_Count;
+      *topicList = rcpConfigurationsList;
+    case(RCP_CAT_STATUS):
+      *size = &Status_RCP_Count;
+      *topicList = rcpStatusList;
+    case(RCP_CAT_LOGS):
+      *size = &Logs_RCP_Count;
+      *topicList = rcpLogsList;
+    case(RCP_CAT_SETTINGS):
+      *size = &Settings_RCP_Count;
+      *topicList = rcpSettingsList;
+    default: //case(RCP_CAT_HIDDENS):
+      *size = &Hiddens_RCP_Count;
+      *topicList = rcpHiddensList;
+  }
+}
+
+RCPTopic* CreateTopic(RCP_cat_t category, String name){
+  rcp_size_t * currentIDs;
+  RCPTopic ** array;
+  getArrayFromCategory(category, &currentIDs, &array);
+
+  if(*currentIDs >= MAX_TOPIC_ID){
+    return NULL;
+  }
+
+  ID_t newID = (ID_t) *currentIDs;
+  currentIDs++;
+  RCPTopic* newTopic = new RCPTopic(category, newID, name);
+  array[newID] = newTopic;
+}
 
 RCPTopic::RCPTopic(RCP_cat_t category, ID_t id, String name){
   _category = category;
@@ -144,7 +199,7 @@ void setName(String name){
   _isDataFresh = false;
 }
 
-void setName(binary_t data[], sizeT_t name_length){
+void setName(binary_t data[], rcp_size_t name_length){
   free(_name);
   _displayName = String(data);
   _name_length = _displayName.length(); //note: no trailing null char
@@ -176,7 +231,7 @@ void RCPTopic::setString(String data){
   _isDataFresh = false;
 }
 
-void RCPTopic::setByteArray(binary_t* data, sizeT_t length){
+void RCPTopic::setByteArray(binary_t* data, rcp_size_t length){
   if(_type != RCP_TYPE_NULL && _type != RCP_TYPE_BYTE_ARRAY){
     free(_data);
       _data = (binary_t*)malloc(sizeof(binary_t)*MAX_TOPIC_DATA_LENGTH); //For speed we do not want to reallocate though at the cost of space
@@ -279,7 +334,7 @@ String RCPTopic::getName(){
   return _displayName;
 }
 
-sizeT_t RCPTopic::getNameLength(){
+rcp_size_t RCPTopic::getNameLength(){
   return _name_length;
 }
 
@@ -291,7 +346,7 @@ String RCPTopic::getString(){
 }
 
 //Does not return a copy!
-binary_t* RCPTopic::getByteArray(sizeT_t* length){
+binary_t* RCPTopic::getByteArray(rcp_size_t* length){
   if(_type != RCP_TYPE_BYTE_ARRAY){
     *length = 0;
     return NULL;
@@ -391,22 +446,22 @@ String RCPTopic::valueToDisplay(){
   }
 }
 
-bool RCPTopic::getMSG_announceTopic(binary_t* data, size_t* length){
+bool RCPTopic::getMSG_announceTopic(binary_t* data, rcp_size_t* length){
   //TBA
   return true;
 }
 
-bool RCPTopic::getMSG_publishTopic(binary_t* data, size_t* length){
+bool RCPTopic::getMSG_publishTopic(binary_t* data, rcp_size_t* length){
   //TBA
   return true;
 }
 
-bool RCPTopic::getMSG_changeColor(binary_t color_r, binary_t color_g, binary_t color_b, binary_t* data, size_t* length){
+bool RCPTopic::getMSG_changeColor(binary_t color_r, binary_t color_g, binary_t color_b, binary_t* data, rcp_size_t* length){
   //TBA
   return true;
 }
 
-bool RCPTopic::getMSG_changeColor(binary_t* data, size_t* length){
+bool RCPTopic::getMSG_changeColor(binary_t* data, rcp_size_t* length){
   //TBA
   return true;
 }
