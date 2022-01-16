@@ -1,16 +1,3 @@
-  // RCPTopic* rcpOperationsList[MAX_TOPIC_ID];      // For operational control values, Client inits and then Controller and client update
-  // rcp_size_t Operations_RCP_Count = 0;
-  // RCPTopic* rcpConfigurationsList[MAX_TOPIC_ID];  // For configuration values,  Client inits and then Controller updates
-  // rcp_size_t Configurations_RCP_Count = 0;
-  // RCPTopic* rcpStatusList[MAX_TOPIC_ID];          // For status values, Client inits and updates its own, Controller displays only
-  // rcp_size_t Status_RCP_Count = 0;
-  // RCPTopic* rcpLogsList[MAX_TOPIC_ID];            // For log transmition, universal init but client updates, gets saved to SD card
-  // rcp_size_t Logs_RCP_Count = 0;
-  // RCPTopic* rcpSettingsList[MAX_TOPIC_ID];        // For controller settings, universal init and controller updates
-  // rcp_size_t Settings_RCP_Count = 0;
-  // RCPTopic* rcpHiddensList[MAX_TOPIC_ID];         // For controller publication, universal init and controller updates but not user visible
-  // rcp_size_t Hiddens_RCP_Count = 0;
-
 #include "RCP_Topic.hpp"
 
 #ifndef RCP_CORE_TOPICS_HPP             		
@@ -64,8 +51,9 @@ void initialize_Remote_Control_Topics();
 void initialize_Remote_Control_Topics(){
   // RCP_CAT_STATUS
     String modeMenu = String("#LIVE\nSTOP\nIDLE\nESTOP\nWAIT\n");
-    RCP_Device_Mode = CreateTopic(RCP_CAT_STATUS, "Device State:", true);
-    RCP_Device_Mode->setChar((char)RCP_MODE_IDLE);
+    RCP_Device_Mode = CreateTopic(RCP_CAT_STATUS, "Device State", true);
+    RCP_Device_Mode->setMenu((binary_t*)modeMenu.c_str(),modeMenu.length());
+    RCP_Device_Mode->setMenuSelection(4);
     
   // RCP_CAT_LOGS
     LOGT_VERBOSE = CreateTopic(RCP_CAT_LOGS, "Verbose:", true);
@@ -75,19 +63,18 @@ void initialize_Remote_Control_Topics(){
     LOGT_DEBUG = CreateTopic(RCP_CAT_LOGS, "Debug:", true);
     
   // RCP_CAT_SETTINGS, For controller settings, universal init and controller updates
-    RCP_Command_StartStop = CreateTopic(RCP_CAT_SETTINGS,         "Set Device Mode:", true);
-    RCP_Client_Msg_Rate = CreateTopic(RCP_CAT_SETTINGS,           "Client Limit Byte/s:", true);
-    RCP_Controller_Msg_Rate = CreateTopic(RCP_CAT_SETTINGS,       "Control Limit Byte/s:", true);
+    RCP_Command_StartStop = CreateTopic(RCP_CAT_SETTINGS,         "Set Device Mode", true);
+    RCP_Client_Msg_Rate = CreateTopic(RCP_CAT_SETTINGS,           "Client Limit Byte/s", true);
+    RCP_Controller_Msg_Rate = CreateTopic(RCP_CAT_SETTINGS,       "Control Limit Byte/s", true);
     RCP_Controller_HeartBeat_Rate = CreateTopic(RCP_CAT_SETTINGS, "Control Message Rate", true);
-    RCP_JS_UR_Center = CreateTopic(RCP_CAT_SETTINGS,              "Cal Upper Right Stick", false); 
-    RCP_JS_UL_Center = CreateTopic(RCP_CAT_SETTINGS,              "Cal Upper Left Stick", false); 
-    RCP_JS_LR_Center = CreateTopic(RCP_CAT_SETTINGS,              "Cal Lower Right Stick", false); 
-    RCP_JS_LL_Center = CreateTopic(RCP_CAT_SETTINGS,              "Cal Lower Right Stick", false);
+    RCP_JS_UR_Center = CreateTopic(RCP_CAT_SETTINGS,              "JS Up  Right Center", false); 
+    RCP_JS_UL_Center = CreateTopic(RCP_CAT_SETTINGS,              "JS Up  Left  Center", false); 
+    RCP_JS_LR_Center = CreateTopic(RCP_CAT_SETTINGS,              "JS Low Right Center", false); 
+    RCP_JS_LL_Center = CreateTopic(RCP_CAT_SETTINGS,              "JS Low Left  Center", false);
                                                                  //123456789012345678901 
-    // = CreateTopic(RCP_CAT_SETTINGS, "", true);
     
     RCP_Command_StartStop->setMenu((binary_t*)modeMenu.c_str(),modeMenu.length());
-    RCP_Command_StartStop->setMenuSelection(1);
+    RCP_Command_StartStop->setMenuSelection(4);
     RCP_Client_Msg_Rate->setInt(12000); //Theoretical ~14k max but allow for some slop
     RCP_Controller_Msg_Rate->setInt(12000);
     RCP_Controller_HeartBeat_Rate->setInt(7);
@@ -105,17 +92,17 @@ void initialize_Remote_Control_Topics(){
     RCP_ControlHeartBeat = CreateTopic(RCP_CAT_HIDDENS, "Control Heartbeat", true);
 
     rcp_size_t numLEDs = RCP_CONTROLLER_NUM_LEDS;
-    binary_t initLEDState[numLEDs] = { 
-      0xF,0xF,0xF,
-      0xF,0xF,0xF,
-      0x0,0x0,0x0,
-      0x0,0x0,0x0,
-      0x0,0x0,0x0,
-      0x0,0x0,0x0,
-      0x0,0x0,0x0,
-      0x0,0x0,0x0,
-      0x0,0x0,0x0,
-      0x0,0x0,0x0};
+    binary_t initLEDState[numLEDs*3] = { 
+      0xF,0xF,0xF, //RCP_CONTROLLER_LEFT_TWIST_COLOR,
+      0xF,0xF,0xF, //RCP_CONTROLLER_RIGHT_TWIST_COLOR,
+      0x0,0x0,0x0, //RCP_CONTROLLER_LEFT_TWIST_COLOR_DELTA,
+      0x0,0x0,0x0, //RCP_CONTROLLER_RIGHT_TWIST_COLOR_DELTA,
+      0x0,0x0,0x0, // RCP_CONTROLLER_LED1_COLOR,
+      0x0,0x0,0x0, //RCP_CONTROLLER_LED2_COLOR,
+      0x0,0x0,0x0, //RCP_CONTROLLER_LED3_COLOR,
+      0x0,0x0,0x0, //RCP_CONTROLLER_LED4_COLOR,
+      0x0,0x0,0x0, //RCP_CONTROLLER_LED5_COLOR,
+      0x0,0x0,0x0}; //RCP_CONTROLLER_LED6_COLOR,
     RCP_LED_Colors->setByteArray(initLEDState,numLEDs);
     RCP_Right_Twist_Limit->setInt(0);
     RCP_Left_Twist_Limit->setInt(0);

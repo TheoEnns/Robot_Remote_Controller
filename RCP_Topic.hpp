@@ -89,6 +89,7 @@ class RCPTopic{
     void setFresh();
 
     String getName();
+    char* getNameRaw();
     rcp_size_t getNameLength();
     String getString();
     binary_t* getByteArray(rcp_size_t* length); //not a copy
@@ -107,6 +108,9 @@ class RCPTopic{
 
     String valueToDisplay();
     void setColor(binary_t color_r, binary_t color_g, binary_t color_b);
+    binary_t getRed();
+    binary_t getGreen();
+    binary_t getBlue();
 
     bool getMSG_announceTopic(binary_t* data, rcp_size_t* length);
     bool getMSG_publishTopic(binary_t* data, rcp_size_t* length);
@@ -196,9 +200,9 @@ RCPTopic::RCPTopic(RCP_cat_t category, ID_t id, String name, bool doesTransmit){
   _doesTransmit = doesTransmit;
 
   _displayText = "NULL";
-  _color_r = 255;		         
-  _color_g = 255;		         
-  _color_b = 255;	
+  _color_r = 0;		         
+  _color_g = 0;		         
+  _color_b = 0;	
 }
 
 RCPTopic::~RCPTopic(){
@@ -361,6 +365,11 @@ void RCPTopic::setMenu(binary_t* data, rcp_size_t length){
       _type = RCP_TYPE_MENU;
       _size = length;
       _data = (binary_t*)malloc(_size); //For speed we do not want to reallocate though at the cost of space
+      _data[0]=0;
+      for(int indx = 1; indx < _size; indx++){
+        if(data[indx] == '\n')
+          data[indx] = 0;
+      }
   }
 
   memcpy(_data, data, _size);
@@ -376,8 +385,10 @@ void RCPTopic::setMenuSelection(binary_t selection){
 }
 
 void RCPTopic::setFresh(){
-  _displayText = valueToDisplay();
-  _isDataFresh = true;
+  if(!_isDataFresh){
+    _displayText = valueToDisplay();
+    _isDataFresh = true;
+  }
 }
 
 void RCPTopic::setColor(binary_t color_r, binary_t color_g, binary_t color_b){
@@ -386,8 +397,24 @@ void RCPTopic::setColor(binary_t color_r, binary_t color_g, binary_t color_b){
   _color_b = color_b;	
 }
 
+binary_t RCPTopic::getRed(){
+  return _color_r;	
+}
+
+binary_t RCPTopic::getGreen(){
+  return _color_g;	
+}
+
+binary_t RCPTopic::getBlue(){
+  return _color_b;	
+}
+
 String RCPTopic::getName(){
-  return String((char*)_name);
+  return _displayName;
+}
+
+char* RCPTopic::getNameRaw(){
+  return (char*)_name;
 }
 
 rcp_size_t RCPTopic::getNameLength(){
@@ -531,11 +558,9 @@ bool RCPTopic::getFresh(){
 
 //Does not update the display text!
 String RCPTopic::valueToDisplay(){
-  //Arduino behaves badly if not declaring these outside the switch cases
-  // binary_t selectNum = 0;
-  // rcp_size_t start = 1;
-  // rcp_size_t index;
-  // String selectString;
+  if(_isDataFresh){
+    return _displayText;
+  }
 
   switch(_type){
     case RCP_TYPE_NULL:
@@ -558,22 +583,6 @@ String RCPTopic::valueToDisplay(){
       return String(getDouble());
     case RCP_TYPE_MENU:
       return getMenuOption(getMenuOptionNum());
-      // for(index = 1; index < _size; index++){
-      //   if(_data[index] == 0 || _data[index] == '\n'){
-      //     if(selectNum == _data[0]){
-      //       break;
-      //     }
-      //     _data[index] = 0;
-      //     start = index+1;
-      //     selectNum++;
-      //   }
-      // }
-      // if (index >= _size){
-      //   selectString = String("NULL SELECTION");
-      // }else{
-      //   selectString = String((char*)(_data+start));
-      // }
-      // return selectString;
     default:
       return "NULL";
   }

@@ -7,19 +7,6 @@
 #define RCP_Tests_HPP
 
 void testTopicCounts(){
-  /*
-  RCPTopic* rcpOperationsList[MAX_TOPIC_ID];      // For operational control values, Client inits and then Controller and client update
-rcp_size_t Operations_RCP_Count = 0;
-RCPTopic* rcpConfigurationsList[MAX_TOPIC_ID];  // For configuration values,  Client inits and then Controller updates
-rcp_size_t Configurations_RCP_Count = 0;
-RCPTopic* rcpStatusList[MAX_TOPIC_ID];          // For status values, Client inits and updates its own, Controller displays only
-rcp_size_t Status_RCP_Count = 0;
-RCPTopic* rcpLogsList[MAX_TOPIC_ID];            // For log transmition, universal init but client updates, gets saved to SD card
-rcp_size_t Logs_RCP_Count = 0;
-RCPTopic* rcpSettingsList[MAX_TOPIC_ID];        // For controller settings, universal init and controller updates
-rcp_size_t Settings_RCP_Count = 0;
-RCPTopic* rcpHiddensList[MAX_TOPIC_ID];         // For controller publication, universal init and controller updates but not user visible
-rcp_size_t Hiddens_RCP_Count = 0;*/
 
   RCPTopic* RCP_Test_Topic1 = CreateTopic(RCP_CAT_OPERATIONS, String("RCP_Test_Topic1"), true);
   RCPTopic* RCP_Test_Topic2 = CreateTopic(RCP_CAT_STATUS, String("RCP_Test_Topic2"), true);
