@@ -9,8 +9,8 @@
   
 #include "RCP_Topics.hpp"
 
-#ifndef RCP_CONTROLLER_TOPIC_HPP             		
-#define RCP_CONTROLLER_TOPIC_HPP
+#ifndef RCP_CONTROLLER_HPP             		
+#define RCP_CONTROLLER_HPP
 
 #endif //RCP_CONTROLLER_TOPIC_HPP
 

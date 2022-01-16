@@ -19,6 +19,7 @@ typedef enum{
   RCP_TYPE_BOOL,
   RCP_TYPE_CHAR,
   RCP_TYPE_DOUBLE,
+  RCP_TYPE_MENU,
   NUM_RCP_TYPES
 }RCP_type_t;
 
@@ -33,10 +34,11 @@ typedef enum{
 }RCP_cat_t;
 
 typedef enum{
-  RCP_MODE_ACTIVE=0,
+  RCP_MODE_LIVE=0,
   RCP_MODE_ESTOP,
   RCP_MODE_STOP,
   RCP_MODE_IDLE,
+  RCP_MODE_WAIT,
   NUM_MODE_TYPES
 }RCP_mode_t; // Note must fit in a char
 
@@ -82,6 +84,8 @@ class RCPTopic{
     void setBool(bool data);
     void setChar(char8_t data);
     void setDouble(double64_t data);
+    void setMenu(binary_t* data, rcp_size_t length);
+    void setMenuSelection(binary_t selection);
     void setFresh();
 
     String getName();
@@ -94,6 +98,11 @@ class RCPTopic{
     bool getBool();
     char8_t getChar();
     double64_t getDouble();
+    binary_t getMenuOptionNum();
+    String getMenuOption(binary_t option);
+    String getMenuOptions();
+    binary_t getMenuSelection();
+
     bool getFresh();
 
     String valueToDisplay();
@@ -107,6 +116,7 @@ class RCPTopic{
 
 RCPTopic* CreateTopic(RCP_cat_t category, String name, bool doesTransmit);
 void getArrayFromCategory(RCP_cat_t category, rcp_size_t** size, RCPTopic**topicList);
+
 
 RCPTopic* rcpOperationsList[MAX_TOPIC_ID];      // For operational control values, Client inits and then Controller and client update
 rcp_size_t Operations_RCP_Count = 0;
@@ -127,18 +137,23 @@ void getArrayFromCategory(RCP_cat_t category, rcp_size_t** size, RCPTopic*** top
     case(RCP_CAT_OPERATIONS):
       *size = &Operations_RCP_Count;
       *topicList = rcpOperationsList;
+      break;
     case(RCP_CAT_CONFIGURATION):
       *size = &Configurations_RCP_Count;
       *topicList = rcpConfigurationsList;
+      break;
     case(RCP_CAT_STATUS):
       *size = &Status_RCP_Count;
       *topicList = rcpStatusList;
+      break;
     case(RCP_CAT_LOGS):
       *size = &Logs_RCP_Count;
       *topicList = rcpLogsList;
+      break;
     case(RCP_CAT_SETTINGS):
       *size = &Settings_RCP_Count;
       *topicList = rcpSettingsList;
+      break;
     default: //case(RCP_CAT_HIDDENS):
       *size = &Hiddens_RCP_Count;
       *topicList = rcpHiddensList;
@@ -155,9 +170,11 @@ RCPTopic* CreateTopic(RCP_cat_t category, String name, bool doesTransmit){
   }
 
   ID_t newID = (ID_t) *currentIDs;
-  currentIDs++;
+  (*currentIDs)++;
+
   RCPTopic* newTopic = new RCPTopic(category, newID, name, doesTransmit);
   array[newID] = newTopic;
+  return newTopic;
 }
 
 RCPTopic::RCPTopic(RCP_cat_t category, ID_t id, String name, bool doesTransmit){
@@ -183,6 +200,7 @@ RCPTopic::RCPTopic(RCP_cat_t category, ID_t id, String name, bool doesTransmit){
   _color_g = 255;		         
   _color_b = 255;	
 }
+
 RCPTopic::~RCPTopic(){
   free(_name);
   if(_type != RCP_TYPE_NULL){
@@ -231,95 +249,129 @@ void RCPTopic::setString(String data){
 
   _data = (binary_t*)malloc(sizeof(binary_t)*_size);
   data.getBytes(_data, _size);
-  // memcpy(_data, data, (_size)*sizeof(binary_t));
   _isDataFresh = false;
 }
 
 void RCPTopic::setByteArray(binary_t* data, rcp_size_t length){
-  if(_type != RCP_TYPE_NULL && _type != RCP_TYPE_BYTE_ARRAY){
+  if(length > MAX_TOPIC_DATA_LENGTH){
+    length = MAX_TOPIC_DATA_LENGTH;
+  }
+  if(_type != RCP_TYPE_NULL && (_type != RCP_TYPE_BYTE_ARRAY || _size != length)){
     free(_data);
-      _data = (binary_t*)malloc(sizeof(binary_t)*MAX_TOPIC_DATA_LENGTH); //For speed we do not want to reallocate though at the cost of space
+  }
+  if(_size != length || _type != RCP_TYPE_BYTE_ARRAY){
+      _type = RCP_TYPE_BYTE_ARRAY;
+      _size = length;
+      _data = (binary_t*)malloc(_size); //For speed we do not want to reallocate though at the cost of space
   }
 
-  _type = RCP_TYPE_BYTE_ARRAY;
-  _size = length;
-  if(_size > MAX_TOPIC_DATA_LENGTH){
-    _size = MAX_TOPIC_DATA_LENGTH;
-  }
-
-  memcpy(_data, data, _size*sizeof(binary_t));
+  memcpy(_data, data, _size);
   _isDataFresh = false;
 }
 
 void RCPTopic::setFloat(float32_t data){
   if(_type != RCP_TYPE_NULL && _type != RCP_TYPE_FLOAT){
     free(_data);
-      _data = (binary_t*)malloc(sizeof(binary_t)*sizeof(float32_t)); //For speed we do not want to reallocate though at the cost of space
-    _size = sizeof(float32_t);
   }
-  _type = RCP_TYPE_FLOAT;
-
-  memcpy(_data, &data, _size*sizeof(binary_t));
+  if(_type != RCP_TYPE_FLOAT){
+    _size = sizeof(float32_t)*sizeof(binary_t);
+    _data = (binary_t*)malloc(_size); //For speed we do not want to reallocate though at the cost of space
+    _type = RCP_TYPE_FLOAT;
+  }
+  memcpy(_data, &data, _size);
   _isDataFresh = false;
 }
 
 void RCPTopic::setLong(long64_t data){
   if(_type != RCP_TYPE_NULL && _type != RCP_TYPE_LONG){
     free(_data);
-      _data = (binary_t*)malloc(sizeof(binary_t)*sizeof(long64_t)); //For speed we do not want to reallocate though at the cost of space
-    _size = sizeof(long64_t);
   }
-  _type = RCP_TYPE_LONG;
-
-  memcpy(_data, &data, _size*sizeof(binary_t));
+  if( _type != RCP_TYPE_LONG){
+      _size = sizeof(binary_t)*sizeof(long64_t);
+      _type = RCP_TYPE_LONG;
+      _data = (binary_t*)malloc(_size); //For speed we do not want to reallocate though at the cost of space
+  }
+  memcpy(_data, &data, _size);
   _isDataFresh = false;
 }
 
 void RCPTopic::setInt(int32_t data){
   if(_type != RCP_TYPE_NULL && _type != RCP_TYPE_INT){
     free(_data);
-      _data = (binary_t*)malloc(sizeof(binary_t)*sizeof(int32_t)); //For speed we do not want to reallocate though at the cost of space
-    _size = sizeof(int32_t);
   }
-  _type = RCP_TYPE_INT;
+  if(_type != RCP_TYPE_INT){
+    _size = sizeof(binary_t)*sizeof(int32_t);
+    _type = RCP_TYPE_INT;
+    _data = (binary_t*)malloc(_size); //For speed we do not want to reallocate though at the cost of space
+  }
 
-  memcpy(_data, &data, _size*sizeof(binary_t));
+  memcpy(_data, &data, _size);
   _isDataFresh = false;
 }
 
 void RCPTopic::setBool(bool data){
   if(_type != RCP_TYPE_NULL && _type != RCP_TYPE_BOOL){
     free(_data);
-      _data = (binary_t*)malloc(sizeof(binary_t)*sizeof(bool)); //For speed we do not want to reallocate though at the cost of space
-    _size = sizeof(bool);
   }
-  _type = RCP_TYPE_BOOL;
-
-  memcpy(_data, &data, _size*sizeof(binary_t));
+  if(_type != RCP_TYPE_BOOL){
+    _size = sizeof(binary_t)*sizeof(bool);
+    _type = RCP_TYPE_BOOL;
+    _data = (binary_t*)malloc(_size); //For speed we do not want to reallocate though at the cost of space
+  }
+  memcpy(_data, &data, _size);
   _isDataFresh = false;
 }
 
 void RCPTopic::setChar(char8_t data){
   if(_type != RCP_TYPE_NULL && _type != RCP_TYPE_CHAR){
     free(_data);
-      _data = (binary_t*)malloc(sizeof(binary_t)*sizeof(char8_t)); //For speed we do not want to reallocate though at the cost of space
-    _size = sizeof(char8_t);
   }
-  _type = RCP_TYPE_CHAR;
+  if(_type != RCP_TYPE_CHAR){
+    _size = sizeof(binary_t)*sizeof(char8_t);
+    _type = RCP_TYPE_CHAR;
+    _data = (binary_t*)malloc(_size); //For speed we do not want to reallocate though at the cost of space
+  }
 
-  memcpy(_data, &data, _size*sizeof(binary_t));
+  memcpy(_data, &data, _size);
   _isDataFresh = false;
 }
 
 void RCPTopic::setDouble(double64_t data){
   if(_type != RCP_TYPE_NULL && _type != RCP_TYPE_DOUBLE){
     free(_data);
-      _data = (binary_t*)malloc(sizeof(binary_t)*sizeof(double64_t)); //For speed we do not want to reallocate though at the cost of space
-    _size = sizeof(double64_t);
   }
-  _type = RCP_TYPE_DOUBLE;
+  if(_type != RCP_TYPE_DOUBLE){
+    _size = sizeof(binary_t)*sizeof(double64_t);
+    _type = RCP_TYPE_DOUBLE;
+    _data = (binary_t*)malloc(_size); //For speed we do not want to reallocate though at the cost of space
+  }
 
-  memcpy(_data, &data, _size*sizeof(binary_t));
+  memcpy(_data, &data, _size);
+  _isDataFresh = false;
+}
+
+void RCPTopic::setMenu(binary_t* data, rcp_size_t length){
+  if(length > MAX_TOPIC_DATA_LENGTH){
+    length = MAX_TOPIC_DATA_LENGTH;
+  }
+  if(_type != RCP_TYPE_NULL && (_type != RCP_TYPE_MENU || _size != length)){
+    free(_data);
+  }
+  if(_size != length || _type != RCP_TYPE_MENU){
+      _type = RCP_TYPE_MENU;
+      _size = length;
+      _data = (binary_t*)malloc(_size); //For speed we do not want to reallocate though at the cost of space
+  }
+
+  memcpy(_data, data, _size);
+  _isDataFresh = false;
+}
+
+void RCPTopic::setMenuSelection(binary_t selection){
+  if(_type != RCP_TYPE_MENU){
+    return;
+  }
+  _data[0] = selection;
   _isDataFresh = false;
 }
 
@@ -335,7 +387,7 @@ void RCPTopic::setColor(binary_t color_r, binary_t color_g, binary_t color_b){
 }
 
 String RCPTopic::getName(){
-  return _displayName;
+  return String((char*)_name);
 }
 
 rcp_size_t RCPTopic::getNameLength(){
@@ -404,9 +456,9 @@ char8_t RCPTopic::getChar(){
   if(_type != RCP_TYPE_CHAR){
     return 0;
   }else{
-    char8_t myBool;
-    memcpy(&myBool, _data, sizeof(char8_t));
-    return myBool;
+    char8_t myChar;
+    memcpy(&myChar, _data, sizeof(char8_t));
+    return myChar;
   }
 }
 
@@ -414,9 +466,62 @@ double64_t RCPTopic::getDouble(){
   if(_type != RCP_TYPE_DOUBLE){
     return 0;
   }else{
-    double64_t myBool;
-    memcpy(&myBool, _data, sizeof(double64_t));
-    return myBool;
+    double64_t myDouble;
+    memcpy(&myDouble, _data, sizeof(double64_t));
+    return myDouble;
+  }
+}
+
+
+binary_t RCPTopic::getMenuOptionNum(){
+  if(_type == RCP_TYPE_MENU){
+    return _data[0];
+  }else{
+    return 0;
+  }
+}
+
+String RCPTopic::getMenuOption(binary_t option){
+  binary_t selectNum = 0;
+  rcp_size_t start = 1;
+  rcp_size_t index;
+  String selectString;
+  if(_type != RCP_TYPE_MENU){
+    return String("");
+  }
+  for(index = 1; index < _size; index++){
+        if(_data[index] == 0 || _data[index] == '\n'){
+          if(selectNum == option){
+            break;
+          }
+          _data[index] = 0;
+          start = index+1;
+          selectNum++;
+        }
+      }
+      if (index >= _size){
+        selectString = String("");
+      }else{
+        selectString = String((char*)(_data+start));
+      }
+      return selectString;
+}
+
+String RCPTopic::getMenuOptions(){
+  if(_type != RCP_TYPE_MENU){
+    return "NULL SELECTION";
+  }else{
+    String myOptions = String((char*)(_data+1));
+    return myOptions;
+  }
+}
+
+binary_t RCPTopic::getMenuSelection(){
+  if(_type != RCP_TYPE_MENU){
+    return 0;
+  }else{
+    binary_t mySelection = *_data;
+    return mySelection;
   }
 }
 
@@ -426,6 +531,12 @@ bool RCPTopic::getFresh(){
 
 //Does not update the display text!
 String RCPTopic::valueToDisplay(){
+  //Arduino behaves badly if not declaring these outside the switch cases
+  // binary_t selectNum = 0;
+  // rcp_size_t start = 1;
+  // rcp_size_t index;
+  // String selectString;
+
   switch(_type){
     case RCP_TYPE_NULL:
       return String("NULL");
@@ -445,6 +556,24 @@ String RCPTopic::valueToDisplay(){
       return String(getChar());
     case RCP_TYPE_DOUBLE:
       return String(getDouble());
+    case RCP_TYPE_MENU:
+      return getMenuOption(getMenuOptionNum());
+      // for(index = 1; index < _size; index++){
+      //   if(_data[index] == 0 || _data[index] == '\n'){
+      //     if(selectNum == _data[0]){
+      //       break;
+      //     }
+      //     _data[index] = 0;
+      //     start = index+1;
+      //     selectNum++;
+      //   }
+      // }
+      // if (index >= _size){
+      //   selectString = String("NULL SELECTION");
+      // }else{
+      //   selectString = String((char*)(_data+start));
+      // }
+      // return selectString;
     default:
       return "NULL";
   }

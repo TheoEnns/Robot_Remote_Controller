@@ -63,6 +63,7 @@ void initialize_Remote_Control_Topics();
 // RCP Initialization
 void initialize_Remote_Control_Topics(){
   // RCP_CAT_STATUS
+    String modeMenu = String("#LIVE\nSTOP\nIDLE\nESTOP\nWAIT\n");
     RCP_Device_Mode = CreateTopic(RCP_CAT_STATUS, "Device State:", true);
     RCP_Device_Mode->setChar((char)RCP_MODE_IDLE);
     
@@ -74,7 +75,7 @@ void initialize_Remote_Control_Topics(){
     LOGT_DEBUG = CreateTopic(RCP_CAT_LOGS, "Debug:", true);
     
   // RCP_CAT_SETTINGS, For controller settings, universal init and controller updates
-    RCP_Command_StartStop = CreateTopic(RCP_CAT_SETTINGS,              "Set Start/Stop:", true);
+    RCP_Command_StartStop = CreateTopic(RCP_CAT_SETTINGS,         "Set Device Mode:", true);
     RCP_Client_Msg_Rate = CreateTopic(RCP_CAT_SETTINGS,           "Client Limit Byte/s:", true);
     RCP_Controller_Msg_Rate = CreateTopic(RCP_CAT_SETTINGS,       "Control Limit Byte/s:", true);
     RCP_Controller_HeartBeat_Rate = CreateTopic(RCP_CAT_SETTINGS, "Control Message Rate", true);
@@ -85,7 +86,8 @@ void initialize_Remote_Control_Topics(){
                                                                  //123456789012345678901 
     // = CreateTopic(RCP_CAT_SETTINGS, "", true);
     
-    RCP_Command_StartStop->setBool(false);
+    RCP_Command_StartStop->setMenu((binary_t*)modeMenu.c_str(),modeMenu.length());
+    RCP_Command_StartStop->setMenuSelection(1);
     RCP_Client_Msg_Rate->setInt(12000); //Theoretical ~14k max but allow for some slop
     RCP_Controller_Msg_Rate->setInt(12000);
     RCP_Controller_HeartBeat_Rate->setInt(7);
