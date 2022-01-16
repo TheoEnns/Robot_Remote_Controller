@@ -61,21 +61,25 @@ unsigned long errorCount = 0;
 unsigned int heartbeatsPerSec = 0;
 unsigned int ackPerSec = 0;
 
-
 //Function Declares
 void initializeDisplay();
 // void initializeMainDisplay();
 // void initializeEntryDisplay();
 // void initializeLogDisplay();
 
-void showBaseDisplay();
-void showMainMenu();
-void showSelectionMenuEntry();
-void showIntegarEntry();
-void showDecimalEntry();
-void showStringEntry();
-void showBoolEntry();
-void showLogs();
+void drawBaseDisplay();
+void drawMainMenu();
+void drawConnectivity();
+void drawSelectionMenuEntry();
+void drawIntegarEntry();
+void drawDecimalEntry();
+void drawStringEntry();
+void drawBoolEntry();
+void drawLogs();
+
+void showMenu();
+void showConnectivity();
+void showEntry();
 
 //Implementation
 void initializeDisplay(){
@@ -195,7 +199,7 @@ void initializeDisplay(){
   myTFT.pCurrentWindow = &entryWind;     
 }
 
-void showBaseDisplay(){
+void drawBaseDisplay(){
   // Fresh Background
   myTFT.pCurrentWindow = NULL;
   myTFT.clearDisplay();    
@@ -203,7 +207,7 @@ void showBaseDisplay(){
   myTFT.fillWindow();
 }
 
-void showMainMenu(){
+void drawMainMenu(){
   //Display Topics
   for(int indx = 0; indx < NUM_DISP_TOPICS; indx++){
     myTFT.setWindowDefaults(&(topicNameWind[indx]));
@@ -222,35 +226,79 @@ void showMainMenu(){
   }
   
   //Display Selection
-    myTFT.pCurrentWindow = &topicValueWind[menuSelection];   
-    myTFT.rectangle(0, 0, SELECTION_WIDTH, myTFT.pCurrentWindow->yMax, true, (color_t)&color_white);
+  myTFT.pCurrentWindow = &topicValueWind[menuSelection];   
+  myTFT.rectangle(0, 0, SELECTION_WIDTH, myTFT.pCurrentWindow->yMax, true, (color_t)&color_white);
+
+  //Display Categories
+  for(int indx = 0; indx < NUM_DISP_CATEGORY; indx++){
+    myTFT.setWindowDefaults(&(categoryWind[indx]));
+    myTFT.setCurrentWindowColorSequence((color_t)&color_black);
+    myTFT.fillWindow();
+    myTFT.setCurrentWindowColorSequence((color_t)&color_white);
+    myTFT.print("CAT");
+    myTFT.print(indx);   
+  }
 }
 
-void showSelectionMenuEntry(){
+void drawConnectivity(){
+  //Display Status
+  myTFT.setWindowDefaults(&connectivityWind);
+  myTFT.setCurrentWindowColorSequence((color_t)&color_darkGrey);
+  myTFT.fillWindow();
+  myTFT.setCurrentWindowColorSequence((color_t)&color_white);
+  myTFT.print("ACTIVE 2/3hps 3err   ");
+  //           123456789012345678901
+}
+
+void drawSelectionMenuEntry(){
 
 }
 
-void showIntegarEntry(){
+void drawIntegarEntry(){
 
 }
 
-void showDecimalEntry(){
+void drawDecimalEntry(){
 
 }
 
-void showStringEntry(){
+void drawStringEntry(){
 
 }
 
-void showBoolEntry(){
+void drawBoolEntry(){
 
 }
 
-void showLogs(){
+void drawLogs(){
 
 }
 
 
+void showMenu(){
+  //Topics
+  for(int indx = 0; indx < NUM_DISP_TOPICS; indx++){
+    myTFT.setWindowDefaults(&(topicNameWind[indx]));
+    myTFT.show();
+
+    myTFT.setWindowDefaults(&(topicValueWind[indx]));
+    myTFT.show();
+  }
+  //Display Categories
+  for(int indx = 0; indx < NUM_DISP_CATEGORY; indx++){
+    myTFT.setWindowDefaults(&(categoryWind[indx]));  
+    myTFT.show();
+  }
+}
+
+void showConnectivity(){
+  myTFT.setWindowDefaults(&connectivityWind);
+  myTFT.show();
+}
+
+void showEntry(){
+  
+}
 
 /*
   myTFT.begin(DC_PIN, CS_PIN, PWM_PIN, SPI_PORT, SPI_SPEED);  // This is a non-hyperdisplay function, but it is required to make the display work
