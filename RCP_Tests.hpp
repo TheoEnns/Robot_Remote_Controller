@@ -61,9 +61,9 @@ void testTopicGetAndSet(){
     Serial.print("Test Display : ");
     Serial.println(RCP_Test_Topic1->valueToDisplay());
 
-    RCP_Test_Topic1->setInt(true);
+    RCP_Test_Topic2->setInt(1);
     Serial.print("Current value should read 0 : ");
-    Serial.println(RCP_Test_Topic2->getInt());
+    Serial.println(RCP_Test_Topic2->getBool());
     Serial.print("Test Display : ");
     Serial.println(RCP_Test_Topic2->valueToDisplay());
 

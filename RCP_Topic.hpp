@@ -578,7 +578,7 @@ String RCPTopic::valueToDisplay(){
         _displayText =  String(getInt());
         break;
       case RCP_TYPE_BOOL:
-        _displayText =  String(getBool());
+        _displayText =  getBool()?String("True"):String("False");
         break;
       case RCP_TYPE_CHAR:
         _displayText =  String(getChar());

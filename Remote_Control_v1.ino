@@ -116,6 +116,8 @@ void loop() {
   // Serial.print("Display Elapse: ");
   // Serial.println(elapse);
 
+
+  RCP_Controller_HeartBeat_Rate->setFloat(RCP_Controller_HeartBeat_Rate->getFloat()+0.1);
   elapse = micros();
   rDisp.drawValues();
   rDisp.drawConnectivity();

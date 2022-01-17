@@ -355,6 +355,11 @@ void RCPMenu::drawValues(){
         myTFT.print(text);
         topicValueWind_isStale[indx] = true;
       }
+
+      if(indx == menuSelection[currentCategory]){
+        myTFT.pCurrentWindow = &topicValueWind[menuSelection[currentCategory]];   
+        myTFT.rectangle(0, 0, SELECTION_WIDTH, myTFT.pCurrentWindow->yMax, true, (color_t)&color_white);
+      }
     }
   }
 }
