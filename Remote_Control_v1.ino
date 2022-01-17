@@ -45,35 +45,34 @@ void setup() {
 #endif
 
   rDisp.initializeDisplay();
-  // drawBaserDisp();
+  rDisp.drawBaseDisplay();
   rDisp.drawMainMenu();
   rDisp.drawCategories();
   rDisp.drawConnectivity();
   rDisp.updateDisplay();
 }
 
-// int counter = 0;
+unsigned long elapse;
 void loop() {
-  delay(1000);
-
+  elapse = micros();
   keypad.updateFIFO();  // necessary for keypad to pull button from stack to readable register
   char key = keypad.getButton();
   while(key>0){
     switch(key){
       case '2':
-        Serial.println("Button UP released!");
+        //Serial.println("Button UP released!");
         rDisp.lowerSelection();
         break;
       case '4':
-        Serial.println("Button LEFT released!");
+        //Serial.println("Button LEFT released!");
         rDisp.lowerCategory();
         break;
       case '6':
-        Serial.println("Button RIGHT released!");
+        //Serial.println("Button RIGHT released!");
         rDisp.raiseCategory();
         break;
       case '8':
-        Serial.println("Button DOWN released!");
+        //Serial.println("Button DOWN released!");
         rDisp.raiseSelection();
         break;
     }
@@ -84,34 +83,44 @@ void loop() {
   if(button.getClickedInterrupt()) {
     uint8_t clicked;
     clicked = button.getClicked(); 
-
+    if(clicked & 0x01)
+    {//Serial.println("Button A released!");
+      
+    }
+    if(clicked & 0x02)
+    {//Serial.println("Button B released!");
+      
+    }
     if(clicked & 0x04)
-    {
+    {//up
       rDisp.lowerSelection();
     }
     if(clicked & 0x08)
-    {
+    {//down
       rDisp.raiseSelection();
     }
     if(clicked & 0x10)
-    {
+    {//left
       rDisp.lowerCategory();
     }
     if(clicked & 0x20)
-    {
+    {//right
       rDisp.raiseCategory();
     }
+    if(clicked & 0x40)
+    {// Serial.println("Button CENTER released!");
+      
+    }
   }
+  elapse = micros() - elapse;
+  // Serial.print("Display Elapse: ");
+  // Serial.println(elapse);
 
-  // RCP_JS_UR_Center->setInt(counter++);
-  // RCP_JS_UL_Center->setInt(counter++);
-  // RCP_JS_LR_Center->setInt(counter++);
-  // RCP_JS_LL_Center->setInt(counter++);
-
-  unsigned long elapse = micros();
+  elapse = micros();
   rDisp.drawValues();
   rDisp.drawConnectivity();
   rDisp.updateDisplay();
   elapse = micros() - elapse;
-  // Serial.println(elapse);
+  Serial.print("Display Elapse: ");
+  Serial.println(elapse);
 }

@@ -4,6 +4,8 @@
 #include "RCP_Topic.hpp" 
 #include "RCP_Core_Topics.hpp"
 
+bool RIGHT_JUSTIFY_VALUES = true;
+
 #include  "src/HyperDisplay\HyperDisplayLarge_4DLCD-320240_4WSPI.h" 
 
 // MicroMod HyperDisplay Defines
@@ -104,7 +106,7 @@ class RCPMenu{
 
 //Implementation
 RCPMenu::RCPMenu(){
-  currentCategory = (RCP_cat_t)4;
+  // currentCategory = (RCP_cat_t)4;
   for(int indx=0;indx<menuSelection[NUM_DISP_CATEGORY];indx++){
     topDisplayID[indx] = 0;
     menuSelection[indx] = 0;
@@ -270,7 +272,9 @@ void RCPMenu::drawMainMenu(){
       myTFT.fillWindow();
       myTFT.setCurrentWindowColorSequence((color_t)&color_white);
       myTFT.resetTextCursor();
-      myTFT.print(newTopic->getNameRaw());
+      String textT = newTopic->getName().substring(0,21);
+      myTFT.print(textT);
+      // myTFT.print(newTopic->getNameRaw());
       topicNameWind_isStale[indx] = true;
 
       myTFT.pCurrentWindow = (&(topicValueWind[indx]));
@@ -278,7 +282,13 @@ void RCPMenu::drawMainMenu(){
       myTFT.fillWindow();
       myTFT.setCurrentWindowColorSequence((color_t)&color_white);
       myTFT.resetTextCursor();
-      myTFT.print(newTopic->getString());
+      String textV = newTopic->getString().substring(0,21);
+      if(RIGHT_JUSTIFY_VALUES){
+        for(int j = 21 - textV.length(); j > 0; j--)
+          myTFT.print(' ');
+      }
+      myTFT.print(textV);
+      // myTFT.print(newTopic->getString());
       topicValueWind_isStale[indx] = true;
     }
     //Display Selection
@@ -337,7 +347,12 @@ void RCPMenu::drawValues(){
         myTFT.fillWindow();
         myTFT.setCurrentWindowColorSequence((color_t)&color_white);
         myTFT.resetTextCursor();
-        myTFT.print(newTopic->getString());
+        String text = newTopic->getString().substring(0,21);
+        if(RIGHT_JUSTIFY_VALUES){
+          for(int j = 21 - text.length(); j > 0; j--)
+            myTFT.print(' ');
+        }
+        myTFT.print(text);
         topicValueWind_isStale[indx] = true;
       }
     }
