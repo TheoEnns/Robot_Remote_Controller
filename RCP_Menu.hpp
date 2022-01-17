@@ -65,8 +65,8 @@ class RCPMenu{
 
     //Indexes For Display
     RCP_cat_t currentCategory = RCP_CAT_OPERATIONS;
-    rcp_size_t topDisplayID = 0;
-    rcp_size_t menuSelection = 0;
+    rcp_size_t topDisplayID[NUM_DISP_CATEGORY];
+    rcp_size_t menuSelection[NUM_DISP_CATEGORY];
     unsigned long errorCount = 0;
     unsigned int heartbeatsPerSec = 0;
     unsigned int ackPerSec = 0;
@@ -80,6 +80,7 @@ class RCPMenu{
     void drawBaseDisplay();
     void drawMainMenu();
     void drawCategories();
+    void drawCategory(int indx);
     void drawValues();
     void drawConnectivity();
 
@@ -104,6 +105,10 @@ class RCPMenu{
 //Implementation
 RCPMenu::RCPMenu(){
   currentCategory = (RCP_cat_t)4;
+  for(int indx=0;indx<menuSelection[NUM_DISP_CATEGORY];indx++){
+    topDisplayID[indx] = 0;
+    menuSelection[indx] = 0;
+  }
 }
 
 RCPMenu::~RCPMenu(){
@@ -247,7 +252,7 @@ void RCPMenu::drawMainMenu(){
   RCPTopic ** array = NULL;
   getArrayFromCategory(currentCategory, &currentIDs, &array);
   for(int indx = 0; indx < NUM_DISP_TOPICS; indx++){
-    if( (array != NULL) && (topDisplayID + indx >= (*currentIDs)) ){
+    if( (array != NULL) && (topDisplayID[currentCategory] + indx >= (*currentIDs)) ){
       myTFT.pCurrentWindow = (&(topicNameWind[indx]));
       myTFT.setCurrentWindowColorSequence((color_t)&color_black);
       myTFT.fillWindow();
@@ -258,7 +263,7 @@ void RCPMenu::drawMainMenu(){
       myTFT.fillWindow();
       topicValueWind_isStale[indx] = true;
     }else{
-      RCPTopic* newTopic = array[topDisplayID + indx];
+      RCPTopic* newTopic = array[topDisplayID[currentCategory] + indx];
       ILI9341_color_16_t topic_color = myTFT.rgbTo16b( newTopic->getRed(), newTopic->getGreen(), newTopic->getBlue());
       myTFT.pCurrentWindow = (&(topicNameWind[indx]));
       myTFT.setCurrentWindowColorSequence((color_t)&topic_color);
@@ -276,18 +281,24 @@ void RCPMenu::drawMainMenu(){
       myTFT.print(newTopic->getString());
       topicValueWind_isStale[indx] = true;
     }
+    //Display Selection
+    if(indx == menuSelection[currentCategory]){
+      myTFT.pCurrentWindow = &topicNameWind[menuSelection[currentCategory]];   
+      myTFT.rectangle(0, 0, SELECTION_WIDTH, myTFT.pCurrentWindow->yMax, true, (color_t)&color_white);
+      myTFT.pCurrentWindow = &topicValueWind[menuSelection[currentCategory]];   
+      myTFT.rectangle(0, 0, SELECTION_WIDTH, myTFT.pCurrentWindow->yMax, true, (color_t)&color_white);
+    }
   }
-  
-  //Display Selection
-  myTFT.pCurrentWindow = &topicNameWind[menuSelection];   
-  myTFT.rectangle(0, 0, SELECTION_WIDTH, myTFT.pCurrentWindow->yMax, true, (color_t)&color_white);
-  myTFT.pCurrentWindow = &topicValueWind[menuSelection];   
-  myTFT.rectangle(0, 0, SELECTION_WIDTH, myTFT.pCurrentWindow->yMax, true, (color_t)&color_white);
 }
 
 void RCPMenu::drawCategories(){
   //Display Categories
   for(int indx = 0; indx < NUM_DISP_CATEGORY; indx++){
+    drawCategory(indx);
+  }
+}
+
+void RCPMenu::drawCategory(int indx){
     myTFT.pCurrentWindow = (&(categoryWind[indx]));
     if(currentCategory == (RCP_cat_t)indx)
       myTFT.setCurrentWindowColorSequence((color_t)&color_blue);
@@ -307,7 +318,6 @@ void RCPMenu::drawCategories(){
     else if(indx==4)
       myTFT.print("SETT"); 
     categoryWind_isStale[indx] = true;
-  }
 }
 
 void RCPMenu::drawValues(){
@@ -316,10 +326,10 @@ void RCPMenu::drawValues(){
   RCPTopic ** array = NULL;
   getArrayFromCategory(currentCategory, &currentIDs, &array);
   for(int indx = 0; indx < NUM_DISP_TOPICS; indx++){
-    if( (array != NULL) && (topDisplayID + indx >= (*currentIDs)) ){
+    if( (array != NULL) && (topDisplayID[currentCategory] + indx >= (*currentIDs)) ){
       // Skip
     }else{
-      RCPTopic* newTopic = array[topDisplayID + indx];
+      RCPTopic* newTopic = array[topDisplayID[currentCategory] + indx];
       if(!newTopic->getFresh()){
         ILI9341_color_16_t topic_color = myTFT.rgbTo16b( newTopic->getRed(), newTopic->getGreen(), newTopic->getBlue());
         myTFT.pCurrentWindow = (&(topicValueWind[indx]));
@@ -370,19 +380,7 @@ void RCPMenu::drawLogs(){
 
 }
 
-void RCPMenu::updateDisplay(){
-  // wind_info_t topicNameWind[NUM_DISP_TOPICS];
-  // bool topicNameWind_isStale[NUM_DISP_TOPICS];
-  // wind_info_t topicValueWind[NUM_DISP_TOPICS];
-  // bool topicValueWind_isStale[NUM_DISP_TOPICS];
-  // wind_info_t categoryWind[NUM_DISP_CATEGORY];
-  // bool categoryWind_isStale[NUM_DISP_CATEGORY];
-  // wind_info_t connectivityWind;
-  // bool connectivityWind_isStale;
-  // wind_info_t entryWind;
-  // bool entryWind_isStale;
-  // wind_info_t displayWind;
-  
+void RCPMenu::updateDisplay(){  
   for(int indx = 0; indx < NUM_DISP_TOPICS; indx++){
     if(topicNameWind_isStale[indx]){
       myTFT.pCurrentWindow = (&(topicNameWind[indx]));
@@ -413,19 +411,97 @@ void RCPMenu::updateDisplay(){
 }
 
 void RCPMenu::raiseSelection(){
+  rcp_size_t new_selection = menuSelection[currentCategory] + 1;
+
+  rcp_size_t * currentIDs;
+  RCPTopic ** array = NULL;
+  getArrayFromCategory(currentCategory, &currentIDs, &array);
+  if(topDisplayID[currentCategory] + new_selection >= (*currentIDs))
+    return;
   
+  if(new_selection >= NUM_DISP_TOPICS){
+    topDisplayID[currentCategory]++;
+    drawMainMenu();
+    return;
+  }else{
+    RCPTopic* oldTopic = array[topDisplayID[currentCategory] + menuSelection[currentCategory]];
+    ILI9341_color_16_t topic_color = myTFT.rgbTo16b( oldTopic->getRed(), oldTopic->getGreen(), oldTopic->getBlue());
+
+    myTFT.pCurrentWindow = &topicNameWind[menuSelection[currentCategory]];
+    myTFT.rectangle(0, 0, SELECTION_WIDTH, myTFT.pCurrentWindow->yMax, true, (color_t)&topic_color);
+    myTFT.pCurrentWindow = &topicValueWind[menuSelection[currentCategory]];
+    myTFT.rectangle(0, 0, SELECTION_WIDTH, myTFT.pCurrentWindow->yMax, true, (color_t)&topic_color);
+    topicNameWind_isStale[menuSelection[currentCategory]] = true;
+    topicValueWind_isStale[menuSelection[currentCategory]] = true;
+
+    myTFT.pCurrentWindow = &topicNameWind[new_selection];   
+    myTFT.rectangle(0, 0, SELECTION_WIDTH, myTFT.pCurrentWindow->yMax, true, (color_t)&color_white);
+    myTFT.pCurrentWindow = &topicValueWind[new_selection];   
+    myTFT.rectangle(0, 0, SELECTION_WIDTH, myTFT.pCurrentWindow->yMax, true, (color_t)&color_white);
+    menuSelection[currentCategory] = new_selection;
+    topicNameWind_isStale[new_selection] = true;
+    topicValueWind_isStale[new_selection] = true;
+  }
 }
 
 void RCPMenu::lowerSelection(){
-  
+  rcp_size_t new_selection = menuSelection[currentCategory] -1;
+  rcp_size_t * currentIDs;
+  RCPTopic ** array = NULL;
+  getArrayFromCategory(currentCategory, &currentIDs, &array);
+
+  if(menuSelection[currentCategory] == 0){
+    if(topDisplayID[currentCategory] == 0){
+      return;
+    } else {
+      topDisplayID[currentCategory]--;
+      new_selection = menuSelection[currentCategory] = 0;
+      drawMainMenu();
+      return;
+    }
+  }else{
+    RCPTopic* oldTopic = array[topDisplayID[currentCategory] + menuSelection[currentCategory]];
+    ILI9341_color_16_t topic_color = myTFT.rgbTo16b( oldTopic->getRed(), oldTopic->getGreen(), oldTopic->getBlue());
+
+    myTFT.pCurrentWindow = &topicNameWind[menuSelection[currentCategory]];   
+    myTFT.rectangle(0, 0, SELECTION_WIDTH, myTFT.pCurrentWindow->yMax, true, (color_t)&topic_color);
+    myTFT.pCurrentWindow = &topicValueWind[menuSelection[currentCategory]];   
+    myTFT.rectangle(0, 0, SELECTION_WIDTH, myTFT.pCurrentWindow->yMax, true, (color_t)&topic_color);
+    topicNameWind_isStale[menuSelection[currentCategory]] = true;
+    topicValueWind_isStale[menuSelection[currentCategory]] = true;
+
+    myTFT.pCurrentWindow = &topicNameWind[new_selection];   
+    myTFT.rectangle(0, 0, SELECTION_WIDTH, myTFT.pCurrentWindow->yMax, true, (color_t)&color_white);
+    myTFT.pCurrentWindow = &topicValueWind[new_selection];   
+    myTFT.rectangle(0, 0, SELECTION_WIDTH, myTFT.pCurrentWindow->yMax, true, (color_t)&color_white);
+    menuSelection[currentCategory] = new_selection;
+    topicNameWind_isStale[new_selection] = true;
+    topicValueWind_isStale[new_selection] = true;
+  }
 }
 
 void RCPMenu::raiseCategory(){
-  
+  RCP_cat_t newCategory = (RCP_cat_t)((int)currentCategory + 1);
+  RCP_cat_t oldCategory = currentCategory;
+  if(newCategory >= NUM_DISP_CATEGORY){
+    newCategory = (RCP_cat_t)0;
+  }
+  currentCategory = newCategory;
+  drawCategory(oldCategory);
+  drawCategory(newCategory);
+  drawMainMenu();
 }
 
 void RCPMenu::lowerCategory(){
-  
+  RCP_cat_t newCategory = (RCP_cat_t)((int)currentCategory - 1);
+  RCP_cat_t oldCategory = currentCategory;
+  if(newCategory < 0){
+    newCategory = (RCP_cat_t)(NUM_DISP_CATEGORY - 1);
+  }
+  currentCategory = newCategory;
+  drawCategory(oldCategory);
+  drawCategory(newCategory);
+  drawMainMenu();
 }
 
 
