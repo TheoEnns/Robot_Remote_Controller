@@ -6,6 +6,16 @@
 
 #include  "src/HyperDisplay\HyperDisplayLarge_4DLCD-320240_4WSPI.h" 
 
+// MicroMod HyperDisplay Defines
+  #define PWM_PIN PWM0             
+  #define CS_PIN D0
+  #define DC_PIN D1
+  #define SPI_PORT SPI
+  #define SPI_SPEED 32000000    
+  #define SCREEN_HEIGHT   320
+  #define SCREEN_WIDTH    240
+  LCD320240_4WSPI myTFT;
+
 // Color Defines
 ILI9341_color_16_t color_white = myTFT.rgbTo16b( 255, 255, 255 );
 
@@ -26,73 +36,81 @@ ILI9341_color_16_t color_darkGrey = myTFT.rgbTo16b( 100, 100, 100 );
 
 ILI9341_color_16_t color_black = myTFT.rgbTo16b( 0, 0, 0 );
 
+// Main Menu Display Dimensions
+  #define NUM_DISP_TOPICS 7
+  #define NUM_DISP_CATEGORY 5
+
+  #define TEXT_BOX_HEIGHT 20
+  #define TEXT_BOX_SPACING 2
+  #define CAT_BOX_WIDTH 46
+  #define CAT_BOX_SPACING 48
+  #define SELECTION_WIDTH 3
+
 //RCPMenu Class
 class RCPMenu{
   private:
-    // MicroMod HyperDisplay Defines
-    #define PWM_PIN PWM0             
-    #define CS_PIN D0
-    #define DC_PIN D1
-    #define SPI_PORT SPI
-    #define SPI_SPEED 32000000    
-    #define SCREEN_HEIGHT   320
-    #define SCREEN_WIDTH    240
-    LCD320240_4WSPI myTFT;
+
+    // Main Menu Display Elements
+    wind_info_t topicNameWind[NUM_DISP_TOPICS];
+    bool topicNameWind_isStale[NUM_DISP_TOPICS];
+    wind_info_t topicValueWind[NUM_DISP_TOPICS];
+    bool topicValueWind_isStale[NUM_DISP_TOPICS];
+    wind_info_t categoryWind[NUM_DISP_CATEGORY];
+    bool categoryWind_isStale[NUM_DISP_CATEGORY];
+    wind_info_t connectivityWind;
+    bool connectivityWind_isStale;
+    wind_info_t entryWind;
+    bool entryWind_isStale;
+    wind_info_t displayWind;
+
+    //Indexes For Display
+    RCP_cat_t currentCategory = RCP_CAT_OPERATIONS;
+    rcp_size_t topDisplayID = 0;
+    rcp_size_t menuSelection = 0;
+    unsigned long errorCount = 0;
+    unsigned int heartbeatsPerSec = 0;
+    unsigned int ackPerSec = 0;
 
   public:
-    RCPMenu(RCP_cat_t category, ID_t id, String name, bool doesTransmit);
+    RCPMenu();
     ~RCPMenu();
-}
+    void initializeDisplay();
 
+    //Draw Funstions
+    void drawBaseDisplay();
+    void drawMainMenu();
+    void drawCategories();
+    void drawValues();
+    void drawConnectivity();
 
+    //Selected Mode Functions
+    void drawSelectionMenuEntry();
+    void drawIntegarEntry();
+    void drawDecimalEntry();
+    void drawStringEntry();
+    void drawBoolEntry();
+    void drawLogs();
 
-// Main Menu Display Values
-#define NUM_DISP_TOPICS 7
-#define NUM_DISP_CATEGORY 5
+    //Show Functions
+    void updateDisplay();
 
-#define TEXT_BOX_HEIGHT 20
-#define TEXT_BOX_SPACING 2
-#define CAT_BOX_WIDTH 46
-#define CAT_BOX_SPACING 48
-#define SELECTION_WIDTH 3
-
-wind_info_t topicNameWind[NUM_DISP_TOPICS];
-wind_info_t topicValueWind[NUM_DISP_TOPICS];
-wind_info_t categoryWind[NUM_DISP_CATEGORY];
-wind_info_t connectivityWind;
-wind_info_t displayWind;
-wind_info_t entryWind;
-
-//Indexes For Display
-RCP_cat_t currentCategory = RCP_CAT_OPERATIONS;
-ID_t topDisplayID = 0;
-rcp_size_t menuSelection = 0;
-unsigned long errorCount = 0;
-unsigned int heartbeatsPerSec = 0;
-unsigned int ackPerSec = 0;
-
-//Function Declares
-void initializeDisplay();
-// void initializeMainDisplay();
-// void initializeEntryDisplay();
-// void initializeLogDisplay();
-
-void drawBaseDisplay();
-void drawMainMenu();
-void drawConnectivity();
-void drawSelectionMenuEntry();
-void drawIntegarEntry();
-void drawDecimalEntry();
-void drawStringEntry();
-void drawBoolEntry();
-void drawLogs();
-
-void showMenu();
-void showConnectivity();
-void showEntry();
+    //State Changes
+    void raiseSelection();
+    void lowerSelection();
+    void raiseCategory();
+    void lowerCategory();
+};
 
 //Implementation
-void initializeDisplay(){
+RCPMenu::RCPMenu(){
+  currentCategory = (RCP_cat_t)4;
+}
+
+RCPMenu::~RCPMenu(){
+    //To Implement later if I ever need to since we aren't planning to free this class ever.
+}
+
+void RCPMenu::initializeDisplay(){
   myTFT.begin(DC_PIN, CS_PIN, PWM_PIN, SPI_PORT, SPI_SPEED);  // This is a non-hyperdisplay function, but it is required to make the display work
   myTFT.setInterfacePixelFormat(ILI9341_PXLFMT_16);
   
@@ -118,6 +136,7 @@ void initializeDisplay(){
         sizeof(ILI9341_color_16_t),true);
     myTFT.pCurrentWindow = &topicNameWind[indx];                                   
     myTFT.buffer(); 
+    topicNameWind_isStale[indx] = true;
     
     myTFT.setWindowDefaults(&(topicValueWind[indx]));
     topicValueWind[indx].xMin = 0;
@@ -134,6 +153,7 @@ void initializeDisplay(){
         sizeof(ILI9341_color_16_t),true);
     myTFT.pCurrentWindow = &topicValueWind[indx];                                   
     myTFT.buffer(); 
+    topicValueWind_isStale[indx] = true;
   }
   
   //Display Categories
@@ -154,6 +174,7 @@ void initializeDisplay(){
         sizeof(ILI9341_color_16_t),true);
     myTFT.pCurrentWindow = &categoryWind[indx];                                   
     myTFT.buffer(); 
+    categoryWind_isStale[indx] = true;
   }
 
   //Display Status
@@ -173,6 +194,7 @@ void initializeDisplay(){
       sizeof(ILI9341_color_16_t),true);
   myTFT.pCurrentWindow = &connectivityWind;                                   
   myTFT.buffer(); 
+  connectivityWind_isStale = true;
 
   //Display Window
   //wind_info_t displayWind;
@@ -207,17 +229,19 @@ void initializeDisplay(){
       (entryWind.yMax-entryWind.yMin+1),
       sizeof(ILI9341_color_16_t),true);
   myTFT.pCurrentWindow = &entryWind;                               
-  myTFT.buffer();     
+  myTFT.buffer();
+  entryWind_isStale = true;     
 }
 
-void drawBaseDisplay(){
+void RCPMenu::drawBaseDisplay(){
   // Fresh Background
-  // myTFT.clearDisplay();    
-  // myTFT.setCurrentWindowColorSequence((color_t)&color_lightGrey);
-  // myTFT.fillWindow();
+  // myTFT.clearDisplay();   
+  myTFT.setWindowDefaults(&displayWind); 
+  myTFT.setCurrentWindowColorSequence((color_t)&color_lightGrey);
+  myTFT.fillWindow();
 }
 
-void drawMainMenu(){
+void RCPMenu::drawMainMenu(){
   //Display Topics
   rcp_size_t * currentIDs;
   RCPTopic ** array = NULL;
@@ -227,9 +251,12 @@ void drawMainMenu(){
       myTFT.pCurrentWindow = (&(topicNameWind[indx]));
       myTFT.setCurrentWindowColorSequence((color_t)&color_black);
       myTFT.fillWindow();
+      topicNameWind_isStale[indx] = true;
+
       myTFT.pCurrentWindow = (&(topicValueWind[indx]));
       myTFT.setCurrentWindowColorSequence((color_t)&color_black);
       myTFT.fillWindow();
+      topicValueWind_isStale[indx] = true;
     }else{
       RCPTopic* newTopic = array[topDisplayID + indx];
       ILI9341_color_16_t topic_color = myTFT.rgbTo16b( newTopic->getRed(), newTopic->getGreen(), newTopic->getBlue());
@@ -239,6 +266,7 @@ void drawMainMenu(){
       myTFT.setCurrentWindowColorSequence((color_t)&color_white);
       myTFT.resetTextCursor();
       myTFT.print(newTopic->getNameRaw());
+      topicNameWind_isStale[indx] = true;
 
       myTFT.pCurrentWindow = (&(topicValueWind[indx]));
       myTFT.setCurrentWindowColorSequence((color_t)&topic_color);
@@ -246,6 +274,7 @@ void drawMainMenu(){
       myTFT.setCurrentWindowColorSequence((color_t)&color_white);
       myTFT.resetTextCursor();
       myTFT.print(newTopic->getString());
+      topicValueWind_isStale[indx] = true;
     }
   }
   
@@ -254,7 +283,9 @@ void drawMainMenu(){
   myTFT.rectangle(0, 0, SELECTION_WIDTH, myTFT.pCurrentWindow->yMax, true, (color_t)&color_white);
   myTFT.pCurrentWindow = &topicValueWind[menuSelection];   
   myTFT.rectangle(0, 0, SELECTION_WIDTH, myTFT.pCurrentWindow->yMax, true, (color_t)&color_white);
+}
 
+void RCPMenu::drawCategories(){
   //Display Categories
   for(int indx = 0; indx < NUM_DISP_CATEGORY; indx++){
     myTFT.pCurrentWindow = (&(categoryWind[indx]));
@@ -275,10 +306,35 @@ void drawMainMenu(){
       myTFT.print("LOGS"); 
     else if(indx==4)
       myTFT.print("SETT"); 
+    categoryWind_isStale[indx] = true;
   }
 }
 
-void drawConnectivity(){
+void RCPMenu::drawValues(){
+//Display Topics
+  rcp_size_t * currentIDs;
+  RCPTopic ** array = NULL;
+  getArrayFromCategory(currentCategory, &currentIDs, &array);
+  for(int indx = 0; indx < NUM_DISP_TOPICS; indx++){
+    if( (array != NULL) && (topDisplayID + indx >= (*currentIDs)) ){
+      // Skip
+    }else{
+      RCPTopic* newTopic = array[topDisplayID + indx];
+      if(!newTopic->getFresh()){
+        ILI9341_color_16_t topic_color = myTFT.rgbTo16b( newTopic->getRed(), newTopic->getGreen(), newTopic->getBlue());
+        myTFT.pCurrentWindow = (&(topicValueWind[indx]));
+        myTFT.setCurrentWindowColorSequence((color_t)&topic_color);
+        myTFT.fillWindow();
+        myTFT.setCurrentWindowColorSequence((color_t)&color_white);
+        myTFT.resetTextCursor();
+        myTFT.print(newTopic->getString());
+        topicValueWind_isStale[indx] = true;
+      }
+    }
+  }
+}
+
+void RCPMenu::drawConnectivity(){
   //Display Status
   myTFT.pCurrentWindow = (&connectivityWind);
   myTFT.setCurrentWindowColorSequence((color_t)&color_darkGrey);
@@ -287,177 +343,90 @@ void drawConnectivity(){
   myTFT.resetTextCursor();
   myTFT.print(RCP_Device_Mode->valueToDisplay());
   myTFT.print(" 2/3hps 3err   ");
+  connectivityWind_isStale = true;
 }
 
-void drawSelectionMenuEntry(){
-
-}
-
-void drawIntegarEntry(){
+void RCPMenu::drawSelectionMenuEntry(){
 
 }
 
-void drawDecimalEntry(){
+void RCPMenu::drawIntegarEntry(){
 
 }
 
-void drawStringEntry(){
+void RCPMenu::drawDecimalEntry(){
 
 }
 
-void drawBoolEntry(){
+void RCPMenu::drawStringEntry(){
 
 }
 
-void drawLogs(){
+void RCPMenu::drawBoolEntry(){
 
 }
 
+void RCPMenu::drawLogs(){
 
-void showMenu(){
-  //Topics
+}
+
+void RCPMenu::updateDisplay(){
+  // wind_info_t topicNameWind[NUM_DISP_TOPICS];
+  // bool topicNameWind_isStale[NUM_DISP_TOPICS];
+  // wind_info_t topicValueWind[NUM_DISP_TOPICS];
+  // bool topicValueWind_isStale[NUM_DISP_TOPICS];
+  // wind_info_t categoryWind[NUM_DISP_CATEGORY];
+  // bool categoryWind_isStale[NUM_DISP_CATEGORY];
+  // wind_info_t connectivityWind;
+  // bool connectivityWind_isStale;
+  // wind_info_t entryWind;
+  // bool entryWind_isStale;
+  // wind_info_t displayWind;
+  
   for(int indx = 0; indx < NUM_DISP_TOPICS; indx++){
-    myTFT.pCurrentWindow = (&(topicNameWind[indx]));
-    myTFT.show();
+    if(topicNameWind_isStale[indx]){
+      myTFT.pCurrentWindow = (&(topicNameWind[indx]));
+      myTFT.show();
+      topicNameWind_isStale[indx] = false;
+    }
 
-    myTFT.pCurrentWindow = (&(topicValueWind[indx]));
-    myTFT.show();
+    if(topicValueWind_isStale[indx]){
+      myTFT.pCurrentWindow = (&(topicValueWind[indx]));
+      myTFT.show();
+      topicValueWind_isStale[indx] = false;
+    }
   }
-  //Display Categories
+  
   for(int indx = 0; indx < NUM_DISP_CATEGORY; indx++){
-    myTFT.pCurrentWindow = (&(categoryWind[indx]));  
+    if(categoryWind_isStale[indx]){
+      myTFT.pCurrentWindow = (&(categoryWind[indx]));  
+      myTFT.show();
+      categoryWind_isStale[indx] = false;
+    }
+  }
+  
+  if(connectivityWind_isStale){
+    myTFT.pCurrentWindow = (&connectivityWind);
     myTFT.show();
+    connectivityWind_isStale = false;
   }
 }
 
-void showConnectivity(){
-  myTFT.pCurrentWindow = (&connectivityWind);
-  myTFT.show();
-}
-
-void showEntry(){
+void RCPMenu::raiseSelection(){
   
 }
 
-/*
-  myTFT.begin(DC_PIN, CS_PIN, PWM_PIN, SPI_PORT, SPI_SPEED);  // This is a non-hyperdisplay function, but it is required to make the display work
-  myTFT.setInterfacePixelFormat(ILI9341_PXLFMT_16);
+void RCPMenu::lowerSelection(){
   
-  // Fresh Background
-  myTFT.clearDisplay();    
-  myTFT.setCurrentWindowColorSequence((color_t)&color_lightGrey);
-  myTFT.fillWindow();
+}
 
-  //Display Topics
-  for(int indx = 0; indx < NUM_DISP_TOPICS; indx++){
-    myTFT.setWindowDefaults(&(topicNameWind[indx]));
-    topicNameWind[indx].xMin = 0;
-    topicNameWind[indx].yMin = TEXT_BOX_HEIGHT*(2*indx)+1;
-    topicNameWind[indx].xMax = 239;
-    topicNameWind[indx].yMax = TEXT_BOX_HEIGHT*(2*indx)+TEXT_BOX_HEIGHT;
-    topicNameWind[indx].cursorX = 4+SELECTION_WIDTH;
-    topicNameWind[indx].cursorY = 3;
-    topicNameWind[indx].xReset = 0;
-    topicNameWind[indx].yReset = 0;
-    myTFT.setWindowMemory(&topicNameWind[indx], NULL, 
-        (topicNameWind[indx].xMax-topicNameWind[indx].xMin+1)*
-        (topicNameWind[indx].yMax-topicNameWind[indx].yMin+1),
-        sizeof(ILI9341_color_16_t),true);
-    myTFT.pCurrentWindow = &topicNameWind[indx];                                   
-    myTFT.buffer(); 
-    myTFT.setCurrentWindowColorSequence((color_t)&color_black);
-    myTFT.fillWindow();
-    myTFT.setCurrentWindowColorSequence((color_t)&color_white);
-    myTFT.print("Topic Name #");
-    myTFT.print(indx);
-
-    myTFT.setWindowDefaults(&(topicValueWind[indx]));
-    topicValueWind[indx].xMin = 0;
-    topicValueWind[indx].yMin = TEXT_BOX_HEIGHT*(2*indx+1)+1;
-    topicValueWind[indx].xMax = 239;
-    topicValueWind[indx].yMax = TEXT_BOX_HEIGHT*(2*indx+1)+TEXT_BOX_HEIGHT-TEXT_BOX_SPACING;
-    topicValueWind[indx].cursorX = 4+SELECTION_WIDTH;
-    topicValueWind[indx].cursorY = 1;
-    topicValueWind[indx].xReset = 0;
-    topicValueWind[indx].yReset = 0;
-    myTFT.setWindowMemory(&topicValueWind[indx], NULL, 
-        (topicValueWind[indx].xMax-topicValueWind[indx].xMin+1)*
-        (topicValueWind[indx].yMax-topicValueWind[indx].yMin+1),
-        sizeof(ILI9341_color_16_t),true);
-    myTFT.pCurrentWindow = &topicValueWind[indx];                                   
-    myTFT.buffer(); 
-    myTFT.setCurrentWindowColorSequence((color_t)&color_black);
-    myTFT.fillWindow();
-    myTFT.setCurrentWindowColorSequence((color_t)&color_white);
-    myTFT.print("Topic Value #");
-    myTFT.print(indx);
-  }
+void RCPMenu::raiseCategory(){
   
-  //Display Selection
-    myTFT.pCurrentWindow = &topicNameWind[0]; 
-    myTFT.rectangle(0, 0, SELECTION_WIDTH, myTFT.pCurrentWindow->yMax, true, (color_t)&color_white);
-    myTFT.print("12345678");
-    //Topic Name #012345678"
-    //123456789012345678901 --> 21 Characters
-    myTFT.pCurrentWindow = &topicValueWind[0];   
-    myTFT.rectangle(0, 0, SELECTION_WIDTH, myTFT.pCurrentWindow->yMax, true, (color_t)&color_white);
+}
 
-  //Display All Topic Windows
-  for(int indx = 0; indx < NUM_DISP_TOPICS; indx++){
-    myTFT.pCurrentWindow = &topicNameWind[indx];        
-    myTFT.show();  
-    myTFT.pCurrentWindow = &topicValueWind[indx];         
-    myTFT.show();
-  }
+void RCPMenu::lowerCategory(){
+  
+}
 
-  //Display Categories
-  for(int indx = 0; indx < NUM_DISP_CATEGORY; indx++){
-    myTFT.setWindowDefaults(&(categoryWind[indx]));
-    int offset = TEXT_BOX_HEIGHT*(2*NUM_DISP_TOPICS)+1;
-    categoryWind[indx].xMin = CAT_BOX_SPACING*(indx)+1;
-    categoryWind[indx].xMax = CAT_BOX_SPACING*(indx)+CAT_BOX_WIDTH;
-    categoryWind[indx].yMin = offset;// 319 - TEXT_BOX_HEIGHT ;
-    categoryWind[indx].yMax = offset + TEXT_BOX_HEIGHT; // 319;
-    categoryWind[indx].cursorX = 2;
-    categoryWind[indx].cursorY = 4;
-    categoryWind[indx].xReset = 0;
-    categoryWind[indx].yReset = 0;
-    myTFT.setWindowMemory(&categoryWind[indx], NULL, 
-        (categoryWind[indx].xMax-categoryWind[indx].xMin+1)*
-        (categoryWind[indx].yMax-categoryWind[indx].yMin+1),
-        sizeof(ILI9341_color_16_t),true);
-    myTFT.pCurrentWindow = &categoryWind[indx];                                   
-    myTFT.buffer(); 
-    myTFT.setCurrentWindowColorSequence((color_t)&color_black);
-    myTFT.fillWindow();
-    myTFT.setCurrentWindowColorSequence((color_t)&color_white);
-    myTFT.print("CAT");
-    myTFT.print(indx);     
-    myTFT.show();
-  }
 
-  //Display Status
-  myTFT.setWindowDefaults(&connectivityWind);
-  int connectivityOffset = TEXT_BOX_HEIGHT*(2*NUM_DISP_TOPICS+1)+2;
-  connectivityWind.xMin = 1;
-  connectivityWind.xMax = 238;
-  connectivityWind.yMin = connectivityOffset;
-  connectivityWind.yMax = 319;
-  connectivityWind.cursorX = 2;
-  connectivityWind.cursorY = 4;
-  connectivityWind.xReset = 0;
-  connectivityWind.yReset = 0;
-  myTFT.setWindowMemory(&connectivityWind, NULL, 
-      (connectivityWind.xMax-connectivityWind.xMin+1)*
-      (connectivityWind.yMax-connectivityWind.yMin+1),
-      sizeof(ILI9341_color_16_t),true);
-  myTFT.pCurrentWindow = &connectivityWind;                                   
-  myTFT.buffer(); 
-  myTFT.setCurrentWindowColorSequence((color_t)&color_darkGrey);
-  myTFT.fillWindow();
-  myTFT.setCurrentWindowColorSequence((color_t)&color_white);
-  myTFT.print("ACTIVE 2/3hps 3err   ");
-  //           123456789012345678901
-  myTFT.show();
-  */
 #endif

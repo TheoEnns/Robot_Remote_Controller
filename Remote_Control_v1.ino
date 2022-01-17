@@ -7,6 +7,7 @@ Author: Theodore Enns
 #include "RCP_Menu.hpp"
 #include "RCP_Tests.hpp" 
 
+RCPMenu rDisp;
 
 void setup() {
   Serial.begin(115200);
@@ -19,20 +20,20 @@ void setup() {
   testTopicCounts();
   Serial.println("Tests Complete");
 
-  initializeDisplay();
-  // drawBaseDisplay();
-  drawMainMenu();
-  drawConnectivity();
-  showMenu();
-  showConnectivity();
+  rDisp.initializeDisplay();
+  // drawBaserDisp();
+  rDisp.drawMainMenu();
+  rDisp.drawCategories();
+  rDisp.drawConnectivity();
+  rDisp.updateDisplay();
 }
 
 void loop() {
   delay(1000);
   unsigned long elapse = micros();
-  currentCategory = (RCP_cat_t)4;//(RCP_cat_t)(((int)currentCategory+1)%5);
-  drawMainMenu();
-  showMenu();
+  rDisp.drawValues();
+  rDisp.drawConnectivity();
+  rDisp.updateDisplay();
   elapse = micros() - elapse;
   Serial.println(elapse);
 }

@@ -195,11 +195,11 @@ RCPTopic::RCPTopic(RCP_cat_t category, ID_t id, String name, bool doesTransmit){
   _type = RCP_TYPE_NULL;
   _size = 0;
   _data = NULL;
-  _isDataFresh = true;
+  _isDataFresh = false;
   _isDisplayFresh = true;
   _doesTransmit = doesTransmit;
 
-  _displayText = "NULL";
+  _displayText = String("NULL");
   _color_r = 0;		         
   _color_g = 0;		         
   _color_b = 0;	
@@ -386,8 +386,7 @@ void RCPTopic::setMenuSelection(binary_t selection){
 
 void RCPTopic::setFresh(){
   if(!_isDataFresh){
-    _displayText = valueToDisplay();
-    _isDataFresh = true;
+    valueToDisplay();
   }
 }
 
@@ -558,34 +557,45 @@ bool RCPTopic::getFresh(){
 
 //Does not update the display text!
 String RCPTopic::valueToDisplay(){
-  if(_isDataFresh){
-    return _displayText;
+  if(!_isDataFresh){
+    switch(_type){
+      case RCP_TYPE_NULL:
+        _displayText =  String("NULL");
+        break;
+      case RCP_TYPE_STRING:
+        _displayText =  String((char*)_data);
+        break;
+      case RCP_TYPE_BYTE_ARRAY:
+        _displayText =  String((char*)_data);//For now until I need a hex printout
+        break;
+      case RCP_TYPE_FLOAT:
+        _displayText =  String(getFloat());
+        break;
+      case RCP_TYPE_LONG:
+        _displayText =  String(getLong());
+        break;
+      case RCP_TYPE_INT:
+        _displayText =  String(getInt());
+        break;
+      case RCP_TYPE_BOOL:
+        _displayText =  String(getBool());
+        break;
+      case RCP_TYPE_CHAR:
+        _displayText =  String(getChar());
+        break;
+      case RCP_TYPE_DOUBLE:
+        _displayText =  String(getDouble());
+        break;
+      case RCP_TYPE_MENU:
+        _displayText =  getMenuOption(getMenuOptionNum());
+        break;
+      default:
+        _displayText = String("NULL");
+        break;
+    }
+    _isDataFresh = true;
   }
-
-  switch(_type){
-    case RCP_TYPE_NULL:
-      return String("NULL");
-    case RCP_TYPE_STRING:
-      return String((char*)_data);
-    case RCP_TYPE_BYTE_ARRAY:
-      return String((char*)_data);//For now until I need a hex printout
-    case RCP_TYPE_FLOAT:
-      return String(getFloat());
-    case RCP_TYPE_LONG:
-      return String(getLong());
-    case RCP_TYPE_INT:
-      return String(getInt());
-    case RCP_TYPE_BOOL:
-      return String(getBool());
-    case RCP_TYPE_CHAR:
-      return String(getChar());
-    case RCP_TYPE_DOUBLE:
-      return String(getDouble());
-    case RCP_TYPE_MENU:
-      return getMenuOption(getMenuOptionNum());
-    default:
-      return "NULL";
-  }
+  return _displayText;
 }
 
 bool RCPTopic::getMSG_announceTopic(binary_t* data, rcp_size_t* length){
