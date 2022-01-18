@@ -91,6 +91,7 @@ class RCPTopic{
     String getName();
     char* getNameRaw();
     rcp_size_t getNameLength();
+    RCP_type_t getType();
     String getString();
     binary_t* getByteArray(rcp_size_t* length); //not a copy
     float32_t getFloat();
@@ -99,10 +100,10 @@ class RCPTopic{
     bool getBool();
     char8_t getChar();
     double64_t getDouble();
-    binary_t getMenuOptionNum();
+    binary_t getMenuSelection();  
+    binary_t getMenuOptionMaxNum();
     String getMenuOption(binary_t option);
     String getMenuOptions();
-    binary_t getMenuSelection();
 
     bool getFresh();
 
@@ -420,6 +421,10 @@ rcp_size_t RCPTopic::getNameLength(){
   return _name_length;
 }
 
+RCP_type_t RCPTopic::getType(){
+  return _type;
+}
+
 String RCPTopic::getString(){
   if(!_isDataFresh){
     setFresh();
@@ -498,10 +503,16 @@ double64_t RCPTopic::getDouble(){
   }
 }
 
-
-binary_t RCPTopic::getMenuOptionNum(){
+binary_t RCPTopic::getMenuOptionMaxNum(){
+  binary_t selectNum = 0;
   if(_type == RCP_TYPE_MENU){
-    return _data[0];
+    rcp_size_t index;
+    for(index = 1; index < _size; index++){
+      if(_data[index] == 0 || _data[index] == '\n'){
+        selectNum++;
+      }
+    }
+    return selectNum;
   }else{
     return 0;
   }
@@ -516,21 +527,21 @@ String RCPTopic::getMenuOption(binary_t option){
     return String("");
   }
   for(index = 1; index < _size; index++){
-        if(_data[index] == 0 || _data[index] == '\n'){
-          if(selectNum == option){
-            break;
-          }
-          _data[index] = 0;
-          start = index+1;
-          selectNum++;
-        }
+    if(_data[index] == 0 || _data[index] == '\n'){
+      if(selectNum == option){
+        break;
       }
-      if (index >= _size){
-        selectString = String("");
-      }else{
-        selectString = String((char*)(_data+start));
-      }
-      return selectString;
+      _data[index] = 0;
+      start = index+1;
+      selectNum++;
+    }
+  }
+  if (index >= _size){
+    selectString = String("");
+  }else{
+    selectString = String((char*)(_data+start));
+  }
+  return selectString;
 }
 
 String RCPTopic::getMenuOptions(){
@@ -587,7 +598,7 @@ String RCPTopic::valueToDisplay(){
         _displayText =  String(getDouble());
         break;
       case RCP_TYPE_MENU:
-        _displayText =  getMenuOption(getMenuOptionNum());
+        _displayText =  getMenuOption(getMenuSelection());
         break;
       default:
         _displayText = String("NULL");

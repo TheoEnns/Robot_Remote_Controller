@@ -16,6 +16,11 @@ RCPMenu rDisp;
 KEYPAD keypad; 
 MicroModButton button;
 
+
+unsigned long elapse;
+char keypadV;
+char dispClick;
+
 void setup() {
   Serial.begin(115200);
   Wire.begin();
@@ -29,10 +34,10 @@ void setup() {
   if (keypad.begin(Wire, 0x4B) == false)
     Serial.println("Keypad does not appear to be connected. Please check wiring. Freezing...");
   else{
-    char key = 1;
-    while(key>0){
+    keypadV = 1;
+    while(keypadV>0){
       keypad.updateFIFO();  // necessary for keypad to pull button from stack to readable register
-      key = keypad.getButton(); // Clears the event buffer since this stacks up a lot
+      keypadV = keypad.getButton(); // Clears the event buffer since this stacks up a lot
     }
   }
   Serial.println("Init Complete");
@@ -45,83 +50,30 @@ void setup() {
 #endif
 
   rDisp.initializeDisplay();
-  rDisp.drawBaseDisplay();
-  rDisp.drawMainMenu();
-  rDisp.drawCategories();
-  rDisp.drawConnectivity();
-  rDisp.updateDisplay();
+  rDisp.draw();
+  rDisp.showDisplay();
 }
 
-unsigned long elapse;
 void loop() {
   elapse = micros();
-  keypad.updateFIFO();  // necessary for keypad to pull button from stack to readable register
-  char key = keypad.getButton();
-  while(key>0){
-    switch(key){
-      case '2':
-        //Serial.println("Button UP released!");
-        rDisp.lowerSelection();
-        break;
-      case '4':
-        //Serial.println("Button LEFT released!");
-        rDisp.lowerCategory();
-        break;
-      case '6':
-        //Serial.println("Button RIGHT released!");
-        rDisp.raiseCategory();
-        break;
-      case '8':
-        //Serial.println("Button DOWN released!");
-        rDisp.raiseSelection();
-        break;
-    }
-    keypad.updateFIFO();  // necessary for keypad to pull button from stack to readable register
-    key = keypad.getButton();
-  }
-
   if(button.getClickedInterrupt()) {
-    uint8_t clicked;
-    clicked = button.getClicked(); 
-    if(clicked & 0x01)
-    {//Serial.println("Button A released!");
-      
-    }
-    if(clicked & 0x02)
-    {//Serial.println("Button B released!");
-      
-    }
-    if(clicked & 0x04)
-    {//up
-      rDisp.lowerSelection();
-    }
-    if(clicked & 0x08)
-    {//down
-      rDisp.raiseSelection();
-    }
-    if(clicked & 0x10)
-    {//left
-      rDisp.lowerCategory();
-    }
-    if(clicked & 0x20)
-    {//right
-      rDisp.raiseCategory();
-    }
-    if(clicked & 0x40)
-    {// Serial.println("Button CENTER released!");
-      
-    }
+      dispClick = button.getClicked(); 
   }
+  do{
+    keypad.updateFIFO();  // necessary for keypad to pull button from stack to readable register
+    keypadV = keypad.getButton();
+
+    
+
+    rDisp.handleIO( keypadV, dispClick);
+  }while(keypadV > 0);
   elapse = micros() - elapse;
-  // Serial.print("Display Elapse: ");
-  // Serial.println(elapse);
 
 
   RCP_Controller_HeartBeat_Rate->setFloat(RCP_Controller_HeartBeat_Rate->getFloat()+0.1);
   elapse = micros();
-  rDisp.drawValues();
-  rDisp.drawConnectivity();
-  rDisp.updateDisplay();
+  rDisp.draw();
+  rDisp.showDisplay();
   elapse = micros() - elapse;
   Serial.print("Display Elapse: ");
   Serial.println(elapse);
