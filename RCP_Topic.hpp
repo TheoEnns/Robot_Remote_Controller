@@ -49,6 +49,7 @@ typedef uint8_t binary_t;
 #define MAX_TOPIC_ID 256 //Maximum IDs that can be registered to a category
 #define MAX_TOPIC_DATA_LENGTH 128
 #define MAX_TOPIC_NAME_LENGTH 21
+#define RCP_FP_PRES 7
 
 class RCPTopic{
   private:
@@ -580,7 +581,7 @@ String RCPTopic::valueToDisplay(){
         _displayText =  String((char*)_data);//For now until I need a hex printout
         break;
       case RCP_TYPE_FLOAT:
-        _displayText =  String(getFloat());
+        _displayText =  String(getFloat(), RCP_FP_PRES);
         break;
       case RCP_TYPE_LONG:
         _displayText =  String(getLong());
@@ -595,7 +596,7 @@ String RCPTopic::valueToDisplay(){
         _displayText =  String(getChar());
         break;
       case RCP_TYPE_DOUBLE:
-        _displayText =  String(getDouble());
+        _displayText =  String(getDouble(), RCP_FP_PRES);
         break;
       case RCP_TYPE_MENU:
         _displayText =  getMenuOption(getMenuSelection());

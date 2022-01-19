@@ -68,13 +68,14 @@ void loop() {
     rDisp.handleIO( keypadV, dispClick);
   }while(keypadV > 0);
   elapse = micros() - elapse;
-
+  // Serial.print("IO Elapse: ");
+  // Serial.println(elapse);
 
   RCP_Controller_HeartBeat_Rate->setFloat(RCP_Controller_HeartBeat_Rate->getFloat()+0.1);
   elapse = micros();
   rDisp.draw();
   rDisp.showDisplay();
   elapse = micros() - elapse;
-  Serial.print("Display Elapse: ");
-  Serial.println(elapse);
+  // Serial.print("Display Elapse: ");
+  // Serial.println(elapse);
 }

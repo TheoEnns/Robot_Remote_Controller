@@ -3,6 +3,7 @@
  
 #include "RCP_Topic.hpp" 
 #include "RCP_Core_Topics.hpp"
+#include "RCP_IO_Configuration.hpp"
 
 bool RIGHT_JUSTIFY_VALUES = true;
 
@@ -286,8 +287,74 @@ void RCPMenu::handleIO(char keypad, char dispClick){
         break;
     }
   }else{
-      // Add entry specific 
-      doRedrawEntrySpace = true;
+    if(keypad>0){
+      switch(entryType){
+        case RCP_TYPE_NULL:
+          break;
+        case RCP_TYPE_STRING:
+          entryValue.concat(keypad);
+          if(entryValue.length()>=MAX_TOPIC_DATA_LENGTH)
+            entryValue.substring(0,MAX_TOPIC_DATA_LENGTH);
+          break;
+        case RCP_TYPE_BYTE_ARRAY:
+          entryValue.concat(keypad);
+          if(entryValue.length()>=MAX_TOPIC_DATA_LENGTH)
+            entryValue.substring(0,MAX_TOPIC_DATA_LENGTH);
+          break;
+        case RCP_TYPE_FLOAT:
+          if(keypad == '*')
+            entryValue.concat(".");
+          else if(keypad == '#')
+            entryValue= String( (- entryValue.toDouble()), RCP_FP_PRES);
+          else
+            entryValue = entryValue + String(keypad);
+          break;
+        case RCP_TYPE_LONG:
+          if(keypad == '*')
+            ; // entryValue.concat("");
+          else if(keypad == '#')
+            entryValue = String( (long)(- entryValue.toDouble()));
+          else
+            entryValue = entryValue + String(keypad);
+          break;
+        case RCP_TYPE_INT:
+          if(keypad == '*')
+            ; //entryValue.concat("");
+          else if(keypad == '#')
+            entryValue= String( (int)(- entryValue.toDouble()));
+          else
+            entryValue = entryValue + String(keypad);
+          break;
+        case RCP_TYPE_BOOL:
+          if(keypad == '1')
+            entryValue= '1';
+          else if(keypad == '0')
+            entryValue= '0';
+          else
+            ;//entryValue.concat("");
+          break;
+        case RCP_TYPE_CHAR:
+          if(sameCharGroup(entryValue.charAt(0),keypad))
+            entryValue.setCharAt(0,cycleChar(entryValue.charAt(0)));
+          else
+            entryValue.setCharAt(0,keypad);
+          break;
+        case RCP_TYPE_DOUBLE:
+          if(keypad == '*')
+            ;//entryValue.concat("");
+          else if(keypad == '#')
+            entryValue = String( (- entryValue.toDouble()),RCP_FP_PRES);
+          else
+            entryValue = entryValue + String(keypad);
+          break;
+        case RCP_TYPE_MENU:
+          entryValue = String(constrain(String(keypad).toInt(),0,entryTopic->getMenuOptionMaxNum() - 1));
+          break;
+        default:
+          break;
+      }
+    }
+    doRedrawEntrySpace = true;
   }
     
   if(dispClick & 0x01)
@@ -337,10 +404,9 @@ void RCPMenu::handleIO(char keypad, char dispClick){
   }
   if(dispClick & 0x40)
   {// Serial.println("Button CENTER released!");
-    selectButton();
+    //Ignore; this button is sticky
   }
 }
-
 
 void RCPMenu::selectButton(){
     if(!isEntryMode){
@@ -362,6 +428,7 @@ void RCPMenu::selectButton(){
       isEntryMode = false;
       entryWind_isStale = false; 
       doRedrawEntrySpace = false;
+      Serial.println(entryValue);
       switch(entryType){
         case RCP_TYPE_NULL:
           break;
@@ -452,8 +519,12 @@ void RCPMenu::forwardButton(){
     case RCP_TYPE_NULL:
       break;
     case RCP_TYPE_STRING:
+      a = entryValue.length()-1;
+      entryValue.setCharAt(a,cycleChar(entryValue.charAt(a)));
       break;
     case RCP_TYPE_BYTE_ARRAY:
+      a = entryValue.length()-1;
+      entryValue.setCharAt(a,cycleChar(entryValue.charAt(a)));
       break;
     case RCP_TYPE_FLOAT:
       break;
@@ -676,8 +747,9 @@ void RCPMenu::drawConnectivity(){
 }
 
 void RCPMenu::drawInitEntry(){
+  ILI9341_color_16_t topic_color = myTFT.rgbTo16b( entryTopic->getRed(), entryTopic->getGreen(), entryTopic->getBlue());
   myTFT.pCurrentWindow = (&(topicNameWind[0]));
-  myTFT.setCurrentWindowColorSequence((color_t)&color_black);
+  myTFT.setCurrentWindowColorSequence((color_t)&topic_color);
   myTFT.fillWindow();
   myTFT.setCurrentWindowColorSequence((color_t)&color_white);
   myTFT.resetTextCursor();
@@ -686,7 +758,7 @@ void RCPMenu::drawInitEntry(){
   myTFT.show();
 
   myTFT.pCurrentWindow = (&(topicValueWind[0]));
-  myTFT.setCurrentWindowColorSequence((color_t)&color_black);
+  myTFT.setCurrentWindowColorSequence((color_t)&topic_color);
   myTFT.fillWindow();
   myTFT.setCurrentWindowColorSequence((color_t)&color_white);
   myTFT.resetTextCursor();
