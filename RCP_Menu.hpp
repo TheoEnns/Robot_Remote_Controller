@@ -95,7 +95,7 @@ class RCPMenu{
     void initializeDisplay();
 
     //Process IO
-    void handleIO(char keypad, char dispClick);
+    void handleIO();
 
     //Main Draw Function
     void draw();
@@ -266,89 +266,95 @@ void RCPMenu::initializeDisplay(){
 }
 
 //Process IO
-void RCPMenu::handleIO(char keypad, char dispClick){
+void RCPMenu::handleIO(){
   if(!isEntryMode){
-    switch(keypad){
-      case '2':
-        //Serial.println("Button UP released!");
-        lowerSelection();
-        break;
-      case '4':
-        //Serial.println("Button LEFT released!");
-        lowerCategory();
-        break;
-      case '6':
-        //Serial.println("Button RIGHT released!");
-        raiseCategory();
-        break;
-      case '8':
-        //Serial.println("Button DOWN released!");
-        raiseSelection();
-        break;
-    }
+    for(int x=0;x<keypadV.length();x++){
+      char key = keypadV[x];
+      switch(key){
+        case '2':
+          //Serial.println("Button UP released!");
+          lowerSelection();
+          break;
+        case '4':
+          //Serial.println("Button LEFT released!");
+          lowerCategory();
+          break;
+        case '6':
+          //Serial.println("Button RIGHT released!");
+          raiseCategory();
+          break;
+        case '8':
+          //Serial.println("Button DOWN released!");
+          raiseSelection();
+          break;
+      }
+    }  
   }else{
-    if(keypad>0){
+    for(int x=0;x<keypadV.length();x++){
+      char key = keypadV[x];
+      if(key<=0)
+        continue;
       switch(entryType){
         case RCP_TYPE_NULL:
           break;
         case RCP_TYPE_STRING:
-          entryValue.concat(keypad);
+          entryValue.concat(key);
           if(entryValue.length()>=MAX_TOPIC_DATA_LENGTH)
             entryValue.substring(0,MAX_TOPIC_DATA_LENGTH);
           break;
         case RCP_TYPE_BYTE_ARRAY:
-          entryValue.concat(keypad);
+          entryValue.concat(key);
           if(entryValue.length()>=MAX_TOPIC_DATA_LENGTH)
             entryValue.substring(0,MAX_TOPIC_DATA_LENGTH);
           break;
         case RCP_TYPE_FLOAT:
-          if(keypad == '*')
+          if(key == '*')
             entryValue.concat(".");
-          else if(keypad == '#')
+          else if(key == '#')
             entryValue= String( (- entryValue.toDouble()), RCP_FP_PRES);
           else
-            entryValue = entryValue + String(keypad);
+            entryValue = entryValue + String(key);
           break;
         case RCP_TYPE_LONG:
-          if(keypad == '*')
+          if(key == '*')
             ; // entryValue.concat("");
-          else if(keypad == '#')
+          else if(key == '#')
             entryValue = String( (long)(- entryValue.toDouble()));
           else
-            entryValue = entryValue + String(keypad);
+            entryValue = entryValue + String(key);
           break;
         case RCP_TYPE_INT:
-          if(keypad == '*')
+          if(key == '*')
             ; //entryValue.concat("");
-          else if(keypad == '#')
+          else if(key == '#')
             entryValue= String( (int)(- entryValue.toDouble()));
           else
-            entryValue = entryValue + String(keypad);
+            entryValue = entryValue + String(key);
           break;
         case RCP_TYPE_BOOL:
-          if(keypad == '1')
+          if(key == '1')
             entryValue= '1';
-          else if(keypad == '0')
+          else if(key == '0')
             entryValue= '0';
           else
             ;//entryValue.concat("");
           break;
         case RCP_TYPE_CHAR:
-          if(sameCharGroup(entryValue.charAt(0),keypad))
+          if(sameCharGroup(entryValue.charAt(0),key))
             entryValue.setCharAt(0,cycleChar(entryValue.charAt(0)));
           else
-            entryValue.setCharAt(0,keypad);
+            entryValue.setCharAt(0,key);
           break;
         case RCP_TYPE_DOUBLE:
-          if(keypad == '*')
+          if(key == '*')
             ;//entryValue.concat("");
-          else if(keypad == '#')
+          else if(key == '#')
             entryValue = String( (- entryValue.toDouble()),RCP_FP_PRES);
           else
-            entryValue = entryValue + String(keypad);
+            entryValue = entryValue + String(key);
           break;
         case RCP_TYPE_MENU:
-          entryValue = String(constrain(String(keypad).toInt(),0,entryTopic->getMenuOptionMaxNum() - 1));
+          entryValue = String(constrain(String(key).toInt(),0,entryTopic->getMenuOptionMaxNum() - 1));
           break;
         default:
           break;
@@ -406,6 +412,14 @@ void RCPMenu::handleIO(char keypad, char dispClick){
   {// Serial.println("Button CENTER released!");
     //Ignore; this button is sticky
   }
+  while(forwardTwist>0){
+      forwardButton();
+      forwardTwist--;
+  }
+  while(backwardTwist>0){
+      backButton();
+      backwardTwist--;
+  }
 }
 
 void RCPMenu::selectButton(){
@@ -424,11 +438,12 @@ void RCPMenu::selectButton(){
         entryValue = entryTopic->valueToDisplay();
       drawInitEntry();
       doRedrawEntrySpace = true;
+      acquireHijackTwist();
     }else{
+      releaseHijackTwist();
       isEntryMode = false;
       entryWind_isStale = false; 
       doRedrawEntrySpace = false;
-      Serial.println(entryValue);
       switch(entryType){
         case RCP_TYPE_NULL:
           break;
@@ -467,6 +482,7 @@ void RCPMenu::selectButton(){
 }
 
 void RCPMenu::escapeButton(){
+    releaseHijackTwist();
     isEntryMode = false; 
     entryWind_isStale = false; 
     doRedrawEntrySpace = false;

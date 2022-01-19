@@ -20,14 +20,18 @@
   RCPTopic* RCP_Client_Msg_Rate;
   RCPTopic* RCP_Controller_Msg_Rate;
   RCPTopic* RCP_Controller_HeartBeat_Rate;
-  RCPTopic* RCP_JS_UR_Center;
-  RCPTopic* RCP_JS_UL_Center;
-  RCPTopic* RCP_JS_LR_Center;
-  RCPTopic* RCP_JS_LL_Center;
+  RCPTopic* RCP_JS_UR_CenterX;
+  RCPTopic* RCP_JS_UL_CenterX;
+  RCPTopic* RCP_JS_LR_CenterX;
+  RCPTopic* RCP_JS_LL_CenterX;
+  RCPTopic* RCP_JS_UR_CenterY;
+  RCPTopic* RCP_JS_UL_CenterY;
+  RCPTopic* RCP_JS_LR_CenterY;
+  RCPTopic* RCP_JS_LL_CenterY;
 
 // RCP_CAT_HIDDENS // For controller publication, universal init and controller updates but not user visible
   typedef enum {
-    RCP_CONTROLLER_LEFT_TWIST_COLOR,
+    RCP_CONTROLLER_LEFT_TWIST_COLOR=0,
     RCP_CONTROLLER_RIGHT_TWIST_COLOR,
     RCP_CONTROLLER_LEFT_TWIST_COLOR_DELTA,
     RCP_CONTROLLER_RIGHT_TWIST_COLOR_DELTA,
@@ -67,10 +71,14 @@ void initialize_Remote_Control_Topics(){
     RCP_Client_Msg_Rate = CreateTopic(RCP_CAT_SETTINGS,           "Client Limit Byte/s", true);
     RCP_Controller_Msg_Rate = CreateTopic(RCP_CAT_SETTINGS,       "Control Limit Byte/s", true);
     RCP_Controller_HeartBeat_Rate = CreateTopic(RCP_CAT_SETTINGS, "Control Message Rate", true);
-    RCP_JS_UR_Center = CreateTopic(RCP_CAT_SETTINGS,              "JS Up  Right Center", false); 
-    RCP_JS_UL_Center = CreateTopic(RCP_CAT_SETTINGS,              "JS Up  Left  Center", false); 
-    RCP_JS_LR_Center = CreateTopic(RCP_CAT_SETTINGS,              "JS Low Right Center", false); 
-    RCP_JS_LL_Center = CreateTopic(RCP_CAT_SETTINGS,              "JS Low Left  Center", false);
+    RCP_JS_UR_CenterX = CreateTopic(RCP_CAT_SETTINGS,              "JS Up  Right CenterX", false);
+    RCP_JS_UR_CenterY = CreateTopic(RCP_CAT_SETTINGS,              "JS Up  Right CenterY", false);  
+    RCP_JS_UL_CenterX = CreateTopic(RCP_CAT_SETTINGS,              "JS Up  Left  CenterX", false);
+    RCP_JS_UL_CenterY = CreateTopic(RCP_CAT_SETTINGS,              "JS Up  Left  CenterY", false);  
+    RCP_JS_LR_CenterX = CreateTopic(RCP_CAT_SETTINGS,              "JS Low Right CenterX", false);
+    RCP_JS_LR_CenterY = CreateTopic(RCP_CAT_SETTINGS,              "JS Low Right CenterY", false);  
+    RCP_JS_LL_CenterX = CreateTopic(RCP_CAT_SETTINGS,              "JS Low Left  CenterX", false);
+    RCP_JS_LL_CenterY = CreateTopic(RCP_CAT_SETTINGS,              "JS Low Left  CenterY", false);
                                                                  //123456789012345678901 
     
     RCP_Command_StartStop->setMenu((binary_t*)modeMenu.c_str(),modeMenu.length());
@@ -79,10 +87,14 @@ void initialize_Remote_Control_Topics(){
     RCP_Controller_Msg_Rate->setInt(12000);
     RCP_Controller_HeartBeat_Rate->setInt(7);
 
-    RCP_JS_UR_Center->setInt(512);
-    RCP_JS_UL_Center->setInt(512);
-    RCP_JS_LR_Center->setInt(512);
-    RCP_JS_LL_Center->setInt(512);
+    RCP_JS_UR_CenterX->setInt(512);
+    RCP_JS_UL_CenterX->setInt(512);
+    RCP_JS_LR_CenterX->setInt(512);
+    RCP_JS_LL_CenterX->setInt(512);
+    RCP_JS_UR_CenterY->setInt(512);
+    RCP_JS_UL_CenterY->setInt(512);
+    RCP_JS_LR_CenterY->setInt(512);
+    RCP_JS_LL_CenterY->setInt(512);
 
   // RCP_CAT_HIDDENS
     RCP_LED_Colors = CreateTopic(RCP_CAT_HIDDENS, "LED Colors", true);
@@ -93,8 +105,8 @@ void initialize_Remote_Control_Topics(){
 
     rcp_size_t numLEDs = RCP_CONTROLLER_NUM_LEDS;
     binary_t initLEDState[numLEDs*3] = { 
-      0xF,0xF,0xF, //RCP_CONTROLLER_LEFT_TWIST_COLOR,
-      0xF,0xF,0xF, //RCP_CONTROLLER_RIGHT_TWIST_COLOR,
+      0x0,0xFF,0x0, //RCP_CONTROLLER_LEFT_TWIST_COLOR,
+      0x0,0xFF,0x0, //RCP_CONTROLLER_RIGHT_TWIST_COLOR,
       0x0,0x0,0x0, //RCP_CONTROLLER_LEFT_TWIST_COLOR_DELTA,
       0x0,0x0,0x0, //RCP_CONTROLLER_RIGHT_TWIST_COLOR_DELTA,
       0x0,0x0,0x0, // RCP_CONTROLLER_LED1_COLOR,
