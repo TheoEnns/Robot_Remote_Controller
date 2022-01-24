@@ -20,13 +20,13 @@
   RCPTopic* RCP_Client_Msg_Rate;
   RCPTopic* RCP_Controller_Msg_Rate;
   RCPTopic* RCP_Controller_HeartBeat_Rate;
-  RCPTopic* RCP_JS_UR_CenterX;
-  RCPTopic* RCP_JS_UL_CenterX;
-  RCPTopic* RCP_JS_LR_CenterX;
+  RCPTopic* RCP_JS_RU_CenterX;
+  RCPTopic* RCP_JS_LU_CenterX;
+  RCPTopic* RCP_JS_RL_CenterX;
   RCPTopic* RCP_JS_LL_CenterX;
-  RCPTopic* RCP_JS_UR_CenterY;
-  RCPTopic* RCP_JS_UL_CenterY;
-  RCPTopic* RCP_JS_LR_CenterY;
+  RCPTopic* RCP_JS_RU_CenterY;
+  RCPTopic* RCP_JS_LU_CenterY;
+  RCPTopic* RCP_JS_RL_CenterY;
   RCPTopic* RCP_JS_LL_CenterY;
 
 // RCP_CAT_HIDDENS // For controller publication, universal init and controller updates but not user visible
@@ -71,12 +71,12 @@ void initialize_Remote_Control_Topics(){
     RCP_Client_Msg_Rate = CreateTopic(RCP_CAT_SETTINGS,           "Client Limit Byte/s", true);
     RCP_Controller_Msg_Rate = CreateTopic(RCP_CAT_SETTINGS,       "Control Limit Byte/s", true);
     RCP_Controller_HeartBeat_Rate = CreateTopic(RCP_CAT_SETTINGS, "Control Message Rate", true);
-    RCP_JS_UR_CenterX = CreateTopic(RCP_CAT_SETTINGS,              "JS Up  Right CenterX", false);
-    RCP_JS_UR_CenterY = CreateTopic(RCP_CAT_SETTINGS,              "JS Up  Right CenterY", false);  
-    RCP_JS_UL_CenterX = CreateTopic(RCP_CAT_SETTINGS,              "JS Up  Left  CenterX", false);
-    RCP_JS_UL_CenterY = CreateTopic(RCP_CAT_SETTINGS,              "JS Up  Left  CenterY", false);  
-    RCP_JS_LR_CenterX = CreateTopic(RCP_CAT_SETTINGS,              "JS Low Right CenterX", false);
-    RCP_JS_LR_CenterY = CreateTopic(RCP_CAT_SETTINGS,              "JS Low Right CenterY", false);  
+    RCP_JS_RU_CenterX = CreateTopic(RCP_CAT_SETTINGS,              "JS Up  Right CenterX", false);
+    RCP_JS_RU_CenterY = CreateTopic(RCP_CAT_SETTINGS,              "JS Up  Right CenterY", false);  
+    RCP_JS_LU_CenterX = CreateTopic(RCP_CAT_SETTINGS,              "JS Up  Left  CenterX", false);
+    RCP_JS_LU_CenterY = CreateTopic(RCP_CAT_SETTINGS,              "JS Up  Left  CenterY", false);  
+    RCP_JS_RL_CenterX = CreateTopic(RCP_CAT_SETTINGS,              "JS Low Right CenterX", false);
+    RCP_JS_RL_CenterY = CreateTopic(RCP_CAT_SETTINGS,              "JS Low Right CenterY", false);  
     RCP_JS_LL_CenterX = CreateTopic(RCP_CAT_SETTINGS,              "JS Low Left  CenterX", false);
     RCP_JS_LL_CenterY = CreateTopic(RCP_CAT_SETTINGS,              "JS Low Left  CenterY", false);
                                                                  //123456789012345678901 
@@ -87,13 +87,13 @@ void initialize_Remote_Control_Topics(){
     RCP_Controller_Msg_Rate->setInt(12000);
     RCP_Controller_HeartBeat_Rate->setInt(7);
 
-    RCP_JS_UR_CenterX->setInt(512);
-    RCP_JS_UL_CenterX->setInt(512);
-    RCP_JS_LR_CenterX->setInt(512);
+    RCP_JS_RU_CenterX->setInt(512);
+    RCP_JS_LU_CenterX->setInt(512);
+    RCP_JS_RL_CenterX->setInt(512);
     RCP_JS_LL_CenterX->setInt(512);
-    RCP_JS_UR_CenterY->setInt(512);
-    RCP_JS_UL_CenterY->setInt(512);
-    RCP_JS_LR_CenterY->setInt(512);
+    RCP_JS_RU_CenterY->setInt(512);
+    RCP_JS_LU_CenterY->setInt(512);
+    RCP_JS_RL_CenterY->setInt(512);
     RCP_JS_LL_CenterY->setInt(512);
 
   // RCP_CAT_HIDDENS

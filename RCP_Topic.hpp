@@ -121,7 +121,7 @@ class RCPTopic{
 };
 
 RCPTopic* CreateTopic(RCP_cat_t category, String name, bool doesTransmit);
-void getArrayFromCategory(RCP_cat_t category, rcp_size_t** size, RCPTopic**topicList);
+void getRCPArrayFromCategory(RCP_cat_t category, rcp_size_t** size, RCPTopic**topicList);
 
 
 RCPTopic* rcpOperationsList[MAX_TOPIC_ID];      // For operational control values, Client inits and then Controller and client update
@@ -138,7 +138,7 @@ RCPTopic* rcpHiddensList[MAX_TOPIC_ID];         // For controller publication, u
 rcp_size_t Hiddens_RCP_Count = 0;
 
 //Implementation
-void getArrayFromCategory(RCP_cat_t category, rcp_size_t** size, RCPTopic*** topicList){
+void getRCPArrayFromCategory(RCP_cat_t category, rcp_size_t** size, RCPTopic*** topicList){
   switch(category){
     case(RCP_CAT_OPERATIONS):
       *size = &Operations_RCP_Count;
@@ -169,7 +169,7 @@ void getArrayFromCategory(RCP_cat_t category, rcp_size_t** size, RCPTopic*** top
 RCPTopic* CreateTopic(RCP_cat_t category, String name, bool doesTransmit){
   rcp_size_t * currentIDs;
   RCPTopic ** array;
-  getArrayFromCategory(category, &currentIDs, &array);
+  getRCPArrayFromCategory(category, &currentIDs, &array);
 
   if(*currentIDs >= MAX_TOPIC_ID){
     return NULL;

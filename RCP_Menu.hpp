@@ -292,7 +292,7 @@ void RCPMenu::handleIO(){
   }else{
     for(int x=0;x<keypadV.length();x++){
       char key = keypadV[x];
-      if(key<=0)
+      if(key<=0 || (currentCategory == RCP_CAT_STATUS || currentCategory == RCP_CAT_LOGS)) //Purge keys if the topic is read only
         continue;
       switch(entryType){
         case RCP_TYPE_NULL:
@@ -424,10 +424,12 @@ void RCPMenu::handleIO(){
 
 void RCPMenu::selectButton(){
     if(!isEntryMode){
-      isEntryMode = true;
       rcp_size_t * currentIDs;
       RCPTopic ** array = NULL;
-      getArrayFromCategory(currentCategory, &currentIDs, &array);
+      getRCPArrayFromCategory(currentCategory, &currentIDs, &array);
+      if((*currentIDs) <= 0)
+        return; // Nothing to select
+      isEntryMode = true;
       entryTopic = array[topDisplayID[currentCategory] + menuSelection[currentCategory]];
       entryType = entryTopic->getType();
       if(entryType == RCP_TYPE_BOOL)
@@ -444,39 +446,41 @@ void RCPMenu::selectButton(){
       isEntryMode = false;
       entryWind_isStale = false; 
       doRedrawEntrySpace = false;
-      switch(entryType){
-        case RCP_TYPE_NULL:
-          break;
-        case RCP_TYPE_STRING:
-          entryTopic->setString(entryValue);
-          break;
-        case RCP_TYPE_BYTE_ARRAY:
-          entryTopic->setByteArray((binary_t*)entryValue.c_str(),entryValue.length());
-          break;
-        case RCP_TYPE_FLOAT:
-          entryTopic->setFloat(entryValue.toFloat());
-          break;
-        case RCP_TYPE_LONG:
-          entryTopic->setLong((long)entryValue.toDouble());
-          break;
-        case RCP_TYPE_INT:
-          entryTopic->setInt(entryValue.toInt());
-          break;
-        case RCP_TYPE_BOOL:
-          entryTopic->setBool((bool)entryValue.toInt());
-          break;
-        case RCP_TYPE_CHAR:
-          entryTopic->setChar((char)(entryValue.c_str()[0]));
-          break;
-        case RCP_TYPE_DOUBLE:
-          entryTopic->setDouble(entryValue.toDouble());
-          break;
-        case RCP_TYPE_MENU:
-          entryTopic->setMenuSelection(entryValue.toInt());
-          break;
-        default:
-          break;
-      }
+      if(currentCategory != RCP_CAT_STATUS && currentCategory != RCP_CAT_LOGS) // Don't write data on read only topics
+        switch(entryType){
+          case RCP_TYPE_NULL:
+            break;
+          case RCP_TYPE_STRING:
+            entryTopic->setString(entryValue);
+            break;
+          case RCP_TYPE_BYTE_ARRAY:
+            entryTopic->setByteArray((binary_t*)entryValue.c_str(),entryValue.length());
+            break;
+          case RCP_TYPE_FLOAT:
+            entryTopic->setFloat(entryValue.toFloat());
+            break;
+          case RCP_TYPE_LONG:
+            entryTopic->setLong((long)entryValue.toDouble());
+            break;
+          case RCP_TYPE_INT:
+            entryTopic->setInt(entryValue.toInt());
+            break;
+          case RCP_TYPE_BOOL:
+            entryTopic->setBool((bool)entryValue.toInt());
+            break;
+          case RCP_TYPE_CHAR:
+            entryTopic->setChar((char)(entryValue.c_str()[0]));
+            break;
+          case RCP_TYPE_DOUBLE:
+            entryTopic->setDouble(entryValue.toDouble());
+            break;
+          case RCP_TYPE_MENU:
+            entryTopic->setMenuSelection(entryValue.toInt());
+            break;
+          default:
+            break;
+        }
+      clearEntry();
       drawMainMenu();
     }
 }
@@ -486,85 +490,98 @@ void RCPMenu::escapeButton(){
     isEntryMode = false; 
     entryWind_isStale = false; 
     doRedrawEntrySpace = false;
+    clearEntry();
     drawMainMenu(); 
 }
 
 void RCPMenu::backButton(){
   int a;
-  switch(entryType){
-    case RCP_TYPE_NULL:
-      break;
-    case RCP_TYPE_STRING:
-      entryValue.remove(entryValue.length()-1);
-      break;
-    case RCP_TYPE_BYTE_ARRAY:
-      entryValue.remove(entryValue.length()-1);
-      break;
-    case RCP_TYPE_FLOAT:
-      entryValue.remove(entryValue.length()-1);
-      break;
-    case RCP_TYPE_LONG:
-      entryValue.remove(entryValue.length()-1);
-      break;
-    case RCP_TYPE_INT:
-      entryValue.remove(entryValue.length()-1);
-      break;
-    case RCP_TYPE_BOOL:
-      entryValue = entryValue.equals("1")?"0":"1";
-      break;
-    case RCP_TYPE_CHAR:
-      a = (entryValue.c_str()[0])-1;
-      entryValue.setCharAt(0,(char)(a<0?255:a));
-      break;
-    case RCP_TYPE_DOUBLE:
-      entryValue.remove(entryValue.length()-1);
-      break;
-    case RCP_TYPE_MENU:
-      a = entryValue.toInt()-1;
-      entryValue = String(a<0?entryTopic->getMenuOptionMaxNum()-1:a);
-      break;
-    default:
-      break;
+  if(currentCategory != RCP_CAT_STATUS){ //ignore read-only alterations
+    if(currentCategory != RCP_CAT_LOGS){
+      switch(entryType){
+        case RCP_TYPE_NULL:
+          break;
+        case RCP_TYPE_STRING:
+          entryValue.remove(entryValue.length()-1);
+          break;
+        case RCP_TYPE_BYTE_ARRAY:
+          entryValue.remove(entryValue.length()-1);
+          break;
+        case RCP_TYPE_FLOAT:
+          entryValue.remove(entryValue.length()-1);
+          break;
+        case RCP_TYPE_LONG:
+          entryValue.remove(entryValue.length()-1);
+          break;
+        case RCP_TYPE_INT:
+          entryValue.remove(entryValue.length()-1);
+          break;
+        case RCP_TYPE_BOOL:
+          entryValue = entryValue.equals("1")?"0":"1";
+          break;
+        case RCP_TYPE_CHAR:
+          a = (entryValue.c_str()[0])-1;
+          entryValue.setCharAt(0,(char)(a<0?255:a));
+          break;
+        case RCP_TYPE_DOUBLE:
+          entryValue.remove(entryValue.length()-1);
+          break;
+        case RCP_TYPE_MENU:
+          a = entryValue.toInt()-1;
+          entryValue = String(a<0?entryTopic->getMenuOptionMaxNum()-1:a);
+          break;
+        default:
+          break;
+      }
+    }else{
+      // Log search
+    }
+    doRedrawEntrySpace = true;
   }
-  doRedrawEntrySpace = true;
 }
 
 void RCPMenu::forwardButton(){
   int a;
-  switch(entryType){
-    case RCP_TYPE_NULL:
-      break;
-    case RCP_TYPE_STRING:
-      a = entryValue.length()-1;
-      entryValue.setCharAt(a,cycleChar(entryValue.charAt(a)));
-      break;
-    case RCP_TYPE_BYTE_ARRAY:
-      a = entryValue.length()-1;
-      entryValue.setCharAt(a,cycleChar(entryValue.charAt(a)));
-      break;
-    case RCP_TYPE_FLOAT:
-      break;
-    case RCP_TYPE_LONG:
-      break;
-    case RCP_TYPE_INT:
-      break;
-    case RCP_TYPE_BOOL:
-      entryValue = entryValue.equals("1")?"0":"1";
-      break;
-    case RCP_TYPE_CHAR:
-      a = (entryValue.c_str()[0])+1;
-      entryValue.setCharAt(0,(char)(a>255?0:a));
-      break;
-    case RCP_TYPE_DOUBLE:
-      break;
-    case RCP_TYPE_MENU:
-      a = entryValue.toInt()+1;
-      entryValue = String(a>=entryTopic->getMenuOptionMaxNum()?0:a);
-      break;
-    default:
-      break;
-  }
+  if(currentCategory != RCP_CAT_STATUS){ //ignore read-only alterations
+    if(currentCategory != RCP_CAT_LOGS){
+      switch(entryType){
+        case RCP_TYPE_NULL:
+          break;
+        case RCP_TYPE_STRING:
+          a = entryValue.length()-1;
+          entryValue.setCharAt(a,cycleChar(entryValue.charAt(a)));
+          break;
+        case RCP_TYPE_BYTE_ARRAY:
+          a = entryValue.length()-1;
+          entryValue.setCharAt(a,cycleChar(entryValue.charAt(a)));
+          break;
+        case RCP_TYPE_FLOAT:
+          break;
+        case RCP_TYPE_LONG:
+          break;
+        case RCP_TYPE_INT:
+          break;
+        case RCP_TYPE_BOOL:
+          entryValue = entryValue.equals("1")?"0":"1";
+          break;
+        case RCP_TYPE_CHAR:
+          a = (entryValue.c_str()[0])+1;
+          entryValue.setCharAt(0,(char)(a>255?0:a));
+          break;
+        case RCP_TYPE_DOUBLE:
+          break;
+        case RCP_TYPE_MENU:
+          a = entryValue.toInt()+1;
+          entryValue = String(a>=entryTopic->getMenuOptionMaxNum()?0:a);
+          break;
+        default:
+          break;
+      }
+    }else{
+      // Log search
+    }
   doRedrawEntrySpace = true;
+  }
 }
 
 //Main Draw Function
@@ -635,7 +652,7 @@ void RCPMenu::drawMainMenu(){
   //Display Topics
   rcp_size_t * currentIDs;
   RCPTopic ** array = NULL;
-  getArrayFromCategory(currentCategory, &currentIDs, &array);
+  getRCPArrayFromCategory(currentCategory, &currentIDs, &array);
   for(int indx = 0; indx < NUM_DISP_TOPICS; indx++){
     if( (array != NULL) && (topDisplayID[currentCategory] + indx >= (*currentIDs)) ){
       myTFT.pCurrentWindow = (&(topicNameWind[indx]));
@@ -719,7 +736,7 @@ void RCPMenu::drawValues(){
 //Display Topics
   rcp_size_t * currentIDs;
   RCPTopic ** array = NULL;
-  getArrayFromCategory(currentCategory, &currentIDs, &array);
+  getRCPArrayFromCategory(currentCategory, &currentIDs, &array);
   for(int indx = 0; indx < NUM_DISP_TOPICS; indx++){
     if( (array != NULL) && (topDisplayID[currentCategory] + indx >= (*currentIDs)) ){
       // Skip
@@ -789,11 +806,48 @@ void RCPMenu::drawInitEntry(){
   myTFT.pCurrentWindow = (&(topicNameWind[1]));
   myTFT.setCurrentWindowColorSequence((color_t)&color_black);
   myTFT.fillWindow(); 
+  switch(entryType){
+    case RCP_TYPE_NULL:
+      break;
+    case RCP_TYPE_STRING:
+      myTFT.print("Type: String");
+      break;
+    case RCP_TYPE_BYTE_ARRAY:
+      myTFT.print("Type: Data Array");
+      break;
+    case RCP_TYPE_FLOAT:
+      myTFT.print("Type: Float");
+      break;
+    case RCP_TYPE_LONG:
+      myTFT.print("Type: Long");
+      break;
+    case RCP_TYPE_INT:
+      myTFT.print("Type: Integar");
+      break;
+    case RCP_TYPE_BOOL:
+      myTFT.print("Type: Bool");
+      break;
+    case RCP_TYPE_CHAR:
+      myTFT.print("Type: Char");
+      break;
+    case RCP_TYPE_DOUBLE:
+      myTFT.print("Type: Double");
+      break;
+    case RCP_TYPE_MENU:
+      myTFT.print("Type: Menu");
+      break;
+    default:
+      break;
+  }
   myTFT.show();
 
   myTFT.pCurrentWindow = (&(topicValueWind[1]));
   myTFT.setCurrentWindowColorSequence((color_t)&color_black);
   myTFT.fillWindow(); 
+  if(currentCategory != RCP_CAT_STATUS && currentCategory != RCP_CAT_LOGS)
+    ;
+  else
+    myTFT.print("Read-Only");
   myTFT.show();
 }
 
@@ -833,7 +887,8 @@ void RCPMenu::drawIntegarEntry(){
   myTFT.resetTextCursor();
   myTFT.setCurrentWindowColorSequence((color_t)&color_white);
   myTFT.print(entryValue);
-  myTFT.print("_");
+  if(currentCategory != RCP_CAT_STATUS && currentCategory != RCP_CAT_LOGS)
+    myTFT.print("_");
   entryWind_isStale = true;
   doRedrawEntrySpace = false;
 }
@@ -926,7 +981,7 @@ void RCPMenu::raiseSelection(){
 
   rcp_size_t * currentIDs;
   RCPTopic ** array = NULL;
-  getArrayFromCategory(currentCategory, &currentIDs, &array);
+  getRCPArrayFromCategory(currentCategory, &currentIDs, &array);
   if(topDisplayID[currentCategory] + new_selection >= (*currentIDs))
     return;
   
@@ -959,7 +1014,7 @@ void RCPMenu::lowerSelection(){
   rcp_size_t new_selection = menuSelection[currentCategory] -1;
   rcp_size_t * currentIDs;
   RCPTopic ** array = NULL;
-  getArrayFromCategory(currentCategory, &currentIDs, &array);
+  getRCPArrayFromCategory(currentCategory, &currentIDs, &array);
 
   if(menuSelection[currentCategory] == 0){
     if(topDisplayID[currentCategory] == 0){

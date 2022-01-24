@@ -101,20 +101,20 @@ void initializeIO(){
   if(joystickRU.begin(Wire, 0x2C) == false)
     Serial.println("Joystick Right Upper does not appear to be connected. Please check wiring.");
   else{
-    RCP_JS_UR_CenterX->setInt(joystickRU.getHorizontal());
-    RCP_JS_UR_CenterY->setInt(joystickRU.getVertical());
+    RCP_JS_RU_CenterX->setInt(joystickRU.getHorizontal());
+    RCP_JS_RU_CenterY->setInt(joystickRU.getVertical());
   }
   if(joystickLU.begin(Wire, 0x2E) == false)
     Serial.println("Joystick Left Upper does not appear to be connected. Please check wiring.");
   else{
-    RCP_JS_UL_CenterX->setInt(joystickLU.getHorizontal());
-    RCP_JS_UL_CenterY->setInt(joystickLU.getVertical());
+    RCP_JS_LU_CenterX->setInt(joystickLU.getHorizontal());
+    RCP_JS_LU_CenterY->setInt(joystickLU.getVertical());
   }
   if(joystickRL.begin(Wire, 0x2B) == false)
     Serial.println("Joystick Right Lower does not appear to be connected. Please check wiring.");
   else{
-    RCP_JS_LR_CenterX->setInt(joystickRL.getHorizontal());
-    RCP_JS_LR_CenterY->setInt(joystickRL.getVertical());
+    RCP_JS_RL_CenterX->setInt(joystickRL.getHorizontal());
+    RCP_JS_RL_CenterY->setInt(joystickRL.getVertical());
   }
   if(joystickLL.begin(Wire, 0x2A) == false)
     Serial.println("Joystick Left Lower does not appear to be connected. Please check wiring.");
@@ -161,14 +161,14 @@ int centerJS(float pos, float center){
 }
 
 void readControllerIO(){
-  joystickRU_X = centerJS(joystickRU.getHorizontal(), RCP_JS_UR_CenterX->getInt());
-  joystickRU_Y = centerJS(joystickRU.getVertical(), RCP_JS_UR_CenterY->getInt());
+  joystickRU_X = centerJS(joystickRU.getHorizontal(), RCP_JS_RU_CenterX->getInt());
+  joystickRU_Y = centerJS(joystickRU.getVertical(), RCP_JS_RU_CenterY->getInt());
   joystickRU_Press = joystickRU.getButton()==0;
-  joystickLU_X = centerJS(joystickLU.getHorizontal(), RCP_JS_UL_CenterX->getInt());
-  joystickLU_Y = centerJS(joystickLU.getVertical(), RCP_JS_UL_CenterY->getInt());
+  joystickLU_X = centerJS(joystickLU.getHorizontal(), RCP_JS_LU_CenterX->getInt());
+  joystickLU_Y = centerJS(joystickLU.getVertical(), RCP_JS_LU_CenterY->getInt());
   joystickLU_Press = joystickLU.getButton()==0;
-  joystickRL_X = centerJS(joystickRL.getHorizontal(), RCP_JS_LR_CenterX->getInt());
-  joystickRL_Y = centerJS(joystickRL.getVertical(), RCP_JS_LR_CenterY->getInt());
+  joystickRL_X = centerJS(joystickRL.getHorizontal(), RCP_JS_RL_CenterX->getInt());
+  joystickRL_Y = centerJS(joystickRL.getVertical(), RCP_JS_RL_CenterY->getInt());
   joystickRL_Press = joystickRL.getButton()==0;
   joystickLL_X = centerJS(joystickLL.getHorizontal(), RCP_JS_LL_CenterX->getInt());
   joystickLL_Y = centerJS(joystickLL.getVertical(), RCP_JS_LL_CenterY->getInt());
