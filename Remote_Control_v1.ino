@@ -8,6 +8,8 @@ Author: Theodore Enns
  
 #include "RCP_Topic.hpp" 
 #include "RCP_Core_Topics.hpp"
+#include "RCP_Controller.hpp"
+#include "RCP_Communications.hpp" 
 #include "RCP_Menu.hpp"
 #include "RCP_IO_Configuration.hpp"
 #include "RCP_Tests.hpp" 
@@ -22,7 +24,8 @@ void setup() {
   Wire.begin();
 
   Serial.println("Startup...");
-  initialize_Remote_Control_Topics();
+  initialize_Core_Topics();
+  initialize_Remote_Controller_Topics(); // Must come after core topics
   initializeIO();
   rDisp.initializeDisplay();
   initEspSound();
@@ -52,7 +55,7 @@ void loop() {
   // Serial.print("IO Elapse: ");
   // Serial.println(elapse);
 
-  RCP_Controller_HeartBeat_Rate->setFloat(RCP_Controller_HeartBeat_Rate->getFloat()+0.1);
+  // RCP_Controller_HeartBeat_Rate->setFloat(RCP_Controller_HeartBeat_Rate->getFloat()+0.1);
   elapse = micros();
   rDisp.handleIO();
   rDisp.draw();

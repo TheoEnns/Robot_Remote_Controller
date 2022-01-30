@@ -9,6 +9,7 @@
 #include <APA102.h>
 
 #include "RCP_Core_Topics.hpp"
+#include "RCP_Controller.hpp"
 
 
 

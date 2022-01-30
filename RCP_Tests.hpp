@@ -1,7 +1,5 @@
-
 #include "RCP_Topic.hpp" 
 #include "RCP_Core_Topics.hpp"
-
 
 #ifndef RCP_Tests_HPP             		
 #define RCP_Tests_HPP

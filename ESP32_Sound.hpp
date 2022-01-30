@@ -1,7 +1,7 @@
 
 
-#ifndef RCP_CONTROLLER_HPP             		
-#define RCP_CONTROLLER_HPP
+#ifndef ESP32_SOUND_HPP             		
+#define ESP32_SOUND_HPP
 
 /*************************************************
  * Public Constants
@@ -121,4 +121,4 @@ void setSound(int freq, int elapse){
   timeToStopTone = millis() + elapse;
 }
 
-#endif //RCP_CONTROLLER_TOPIC_HPP
+#endif //ESP32_SOUND_HPP

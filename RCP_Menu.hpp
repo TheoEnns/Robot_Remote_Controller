@@ -3,6 +3,7 @@
  
 #include "RCP_Topic.hpp" 
 #include "RCP_Core_Topics.hpp"
+#include "RCP_Controller.hpp"
 #include "RCP_IO_Configuration.hpp"
 #include "ESP32_Sound.hpp" 
 

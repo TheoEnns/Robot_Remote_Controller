@@ -5,8 +5,10 @@
 
 // RCP_CAT_OPERATIONS  // For operational control values, Client inits and then Controller and client update
 
+// RCP_CAT_CONF 
+
 // RCP_CAT_STATUS // For status values, Client inits and updates its own, Controller displays only
-  RCPTopic* RCP_Device_Mode;
+//  RCPTopic* RCP_Device_Mode;
   
 // RCP_CAT_LOGS // For log transmition, universal init but client updates, gets saved to SD card
   RCPTopic* LOGT_VERBOSE;
@@ -16,22 +18,10 @@
   RCPTopic* LOGT_DEBUG;
 
 // RCP_CAT_SETTINGS, For controller settings, universal init and controller updates
-  RCPTopic* RCP_Command_StartStop;
-
-  RCPTopic* RCP_MUTE;
-  RCPTopic* RCP_DISABLE_DISP_CLICKS;
-
+  RCPTopic* RCP_Device_Mode;
   RCPTopic* RCP_Client_Msg_Rate;
   RCPTopic* RCP_Controller_Msg_Rate;
   RCPTopic* RCP_Controller_HeartBeat_Rate;
-  RCPTopic* RCP_JS_RU_CenterX;
-  RCPTopic* RCP_JS_LU_CenterX;
-  RCPTopic* RCP_JS_RL_CenterX;
-  RCPTopic* RCP_JS_LL_CenterX;
-  RCPTopic* RCP_JS_RU_CenterY;
-  RCPTopic* RCP_JS_LU_CenterY;
-  RCPTopic* RCP_JS_RL_CenterY;
-  RCPTopic* RCP_JS_LL_CenterY;
 
 // RCP_CAT_HIDDENS // For controller publication, universal init and controller updates but not user visible
   typedef enum {
@@ -53,15 +43,15 @@
   RCPTopic* RCP_Left_Twist_Limit;
   RCPTopic* RCP_ControlHeartBeat;
 
-void initialize_Remote_Control_Topics();
+void initialize_Core_Topics();
 
 // RCP Initialization
-void initialize_Remote_Control_Topics(){
+void initialize_Core_Topics(){
   // RCP_CAT_STATUS
-    String modeMenu = String("#LIVE\nSTOP\nIDLE\nESTOP\nWAIT\n");
-    RCP_Device_Mode = CreateTopic(RCP_CAT_STATUS, "Device State", true);
-    RCP_Device_Mode->setMenu((binary_t*)modeMenu.c_str(),modeMenu.length());
-    RCP_Device_Mode->setMenuSelection(4);
+    // String modeMenu = String("#LIVE\nSTOP\nIDLE\nESTOP\nWAIT\n");
+    // RCP_Device_Mode = CreateTopic(RCP_CAT_STATUS, "Device State", true);
+    // RCP_Device_Mode->setMenu((binary_t*)modeMenu.c_str(),modeMenu.length());
+    // RCP_Device_Mode->setMenuSelection(4);
     
   // RCP_CAT_LOGS
     LOGT_VERBOSE = CreateTopic(RCP_CAT_LOGS, "Verbose:", true);
@@ -71,40 +61,17 @@ void initialize_Remote_Control_Topics(){
     LOGT_DEBUG = CreateTopic(RCP_CAT_LOGS, "Debug:", true);
     
   // RCP_CAT_SETTINGS, For controller settings, universal init and controller updates
-    RCP_Command_StartStop = CreateTopic(RCP_CAT_SETTINGS,         "Set Device Mode", true);
-    
-    RCP_MUTE = CreateTopic(RCP_CAT_SETTINGS,                      "Mute Sound", true);
-    RCP_DISABLE_DISP_CLICKS = CreateTopic(RCP_CAT_SETTINGS,       "Block Display Buttons", true);
-
+    RCP_Device_Mode = CreateTopic(RCP_CAT_SETTINGS, "Device State", true);
     RCP_Client_Msg_Rate = CreateTopic(RCP_CAT_SETTINGS,           "Client Limit Byte/s", true);
-    RCP_Controller_Msg_Rate = CreateTopic(RCP_CAT_SETTINGS,       "Control Limit Byte/s", true);
+    RCP_Controller_Msg_Rate = CreateTopic(RCP_CAT_SETTINGS,       "Control Limit Byte/s", false);
     RCP_Controller_HeartBeat_Rate = CreateTopic(RCP_CAT_SETTINGS, "Control Message Rate", true);
-    RCP_JS_RU_CenterX = CreateTopic(RCP_CAT_SETTINGS,              "JS Up  Right CenterX", false);
-    RCP_JS_RU_CenterY = CreateTopic(RCP_CAT_SETTINGS,              "JS Up  Right CenterY", false);  
-    RCP_JS_LU_CenterX = CreateTopic(RCP_CAT_SETTINGS,              "JS Up  Left  CenterX", false);
-    RCP_JS_LU_CenterY = CreateTopic(RCP_CAT_SETTINGS,              "JS Up  Left  CenterY", false);  
-    RCP_JS_RL_CenterX = CreateTopic(RCP_CAT_SETTINGS,              "JS Low Right CenterX", false);
-    RCP_JS_RL_CenterY = CreateTopic(RCP_CAT_SETTINGS,              "JS Low Right CenterY", false);  
-    RCP_JS_LL_CenterX = CreateTopic(RCP_CAT_SETTINGS,              "JS Low Left  CenterX", false);
-    RCP_JS_LL_CenterY = CreateTopic(RCP_CAT_SETTINGS,              "JS Low Left  CenterY", false);
                                                                  //123456789012345678901 
-    
-    RCP_Command_StartStop->setMenu((binary_t*)modeMenu.c_str(),modeMenu.length());
-    RCP_MUTE->setBool(true);
-    RCP_DISABLE_DISP_CLICKS->setBool(false);
-    RCP_Command_StartStop->setMenuSelection(4);
+    String modeMenu = String("#LIVE\nSTOP\nIDLE\nESTOP\nWAIT\n");
+    RCP_Device_Mode->setMenu((binary_t*)modeMenu.c_str(),modeMenu.length());
+    RCP_Device_Mode->setMenuSelection(4);
     RCP_Client_Msg_Rate->setInt(12000); //Theoretical ~14k max but allow for some slop
     RCP_Controller_Msg_Rate->setInt(12000);
     RCP_Controller_HeartBeat_Rate->setInt(7);
-
-    RCP_JS_RU_CenterX->setInt(512);
-    RCP_JS_LU_CenterX->setInt(512);
-    RCP_JS_RL_CenterX->setInt(512);
-    RCP_JS_LL_CenterX->setInt(512);
-    RCP_JS_RU_CenterY->setInt(512);
-    RCP_JS_LU_CenterY->setInt(512);
-    RCP_JS_RL_CenterY->setInt(512);
-    RCP_JS_LL_CenterY->setInt(512);
 
   // RCP_CAT_HIDDENS
     RCP_LED_Colors = CreateTopic(RCP_CAT_HIDDENS, "LED Colors", true);

@@ -1,0 +1,25 @@
+#include "RCP_Topic.hpp"
+
+#ifndef RCP_COMMUNICATIONS_HPP             		
+#define RCP_COMMUNICATIONS_HPP
+
+  /*
+  typedef enum{
+  RCP_MSG_DISC_REQUEST=1,
+  RCP_MSG_ACK,
+  RCP_MSG_ANNOUNCE_TOPIC,
+  RCP_MSG_UPDATE_TOPIC,
+  RCP_MSG_RECOLOR_TOPIC,
+  // RCP_MSG_REQUEST_UPDATE,
+  RCP_MSG_HEARTBEAT,
+  RCP_MSG_LOG,
+  RCP_MSG_TONE,
+  NUM_RCP_MSG_TYPES
+}RCP_msg_type_t;
+}RCP_msg_type_t;
+RCP_END_BIT
+*/
+
+
+
+#endif //RCP_COMMUNICATIONS_HPP
