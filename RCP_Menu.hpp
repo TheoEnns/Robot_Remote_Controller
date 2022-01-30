@@ -4,6 +4,7 @@
 #include "RCP_Topic.hpp" 
 #include "RCP_Core_Topics.hpp"
 #include "RCP_IO_Configuration.hpp"
+#include "ESP32_Sound.hpp" 
 
 bool RIGHT_JUSTIFY_VALUES = true;
 
@@ -287,8 +288,22 @@ void RCPMenu::handleIO(){
           //Serial.println("Button DOWN released!");
           raiseSelection();
           break;
+        case '*':
+          selectButton();
+          break;
+        case '#':
+          selectButton();
+          if(entryType == RCP_TYPE_BOOL)
+            entryValue = entryValue.equals("1")?"0":"1";
+          else if(entryType == RCP_TYPE_MENU)
+            entryValue = String(0);
+          else if(entryType == RCP_TYPE_CHAR)
+            entryValue = "A";
+          else
+            entryValue = "";
+          break;
       }
-    }  
+    }
   }else{
     for(int x=0;x<keypadV.length();x++){
       char key = keypadV[x];
@@ -363,11 +378,11 @@ void RCPMenu::handleIO(){
     doRedrawEntrySpace = true;
   }
     
-  if(dispClick & 0x01)
+  if(dispClick & 0x01 || selectClick)
   {//Serial.println("Button A released!");
     selectButton();
   }
-  if(dispClick & 0x02)
+  if(dispClick & 0x02 || escapeClick)
   {//Serial.println("Button B released!");
     if(!isEntryMode){
       selectButton();
@@ -375,6 +390,8 @@ void RCPMenu::handleIO(){
         entryValue = entryValue.equals("1")?"0":"1";
       else if(entryType == RCP_TYPE_MENU)
         entryValue = String(0);
+      else if(entryType == RCP_TYPE_CHAR)
+        entryValue = "A";
       else
         entryValue = "";
     }else
@@ -441,6 +458,7 @@ void RCPMenu::selectButton(){
       drawInitEntry();
       doRedrawEntrySpace = true;
       acquireHijackTwist();
+      setSound(NOTE_A4, 150);
     }else{
       releaseHijackTwist();
       isEntryMode = false;
@@ -481,6 +499,7 @@ void RCPMenu::selectButton(){
             break;
         }
       clearEntry();
+      setSound(NOTE_AS4, 150);
       drawMainMenu();
     }
 }
@@ -491,6 +510,7 @@ void RCPMenu::escapeButton(){
     entryWind_isStale = false; 
     doRedrawEntrySpace = false;
     clearEntry();
+    setSound(NOTE_AS4, 150);
     drawMainMenu(); 
 }
 
@@ -537,6 +557,7 @@ void RCPMenu::backButton(){
       // Log search
     }
     doRedrawEntrySpace = true;
+    setSound(NOTE_C4, 75);
   }
 }
 
@@ -580,6 +601,7 @@ void RCPMenu::forwardButton(){
     }else{
       // Log search
     }
+  setSound(NOTE_CS4, 75);
   doRedrawEntrySpace = true;
   }
 }
@@ -978,6 +1000,7 @@ void RCPMenu::showDisplay(){
 
 void RCPMenu::raiseSelection(){
   rcp_size_t new_selection = menuSelection[currentCategory] + 1;
+  setSound(NOTE_F5, 75);
 
   rcp_size_t * currentIDs;
   RCPTopic ** array = NULL;
@@ -1011,6 +1034,7 @@ void RCPMenu::raiseSelection(){
 }
 
 void RCPMenu::lowerSelection(){
+  setSound(NOTE_FS5, 75);
   rcp_size_t new_selection = menuSelection[currentCategory] -1;
   rcp_size_t * currentIDs;
   RCPTopic ** array = NULL;
@@ -1047,6 +1071,7 @@ void RCPMenu::lowerSelection(){
 }
 
 void RCPMenu::raiseCategory(){
+  setSound(NOTE_F5, 75);
   RCP_cat_t newCategory = (RCP_cat_t)((int)currentCategory + 1);
   RCP_cat_t oldCategory = currentCategory;
   if(newCategory >= NUM_DISP_CATEGORY){
@@ -1059,6 +1084,7 @@ void RCPMenu::raiseCategory(){
 }
 
 void RCPMenu::lowerCategory(){
+  setSound(NOTE_FS5, 75);
   RCP_cat_t newCategory = (RCP_cat_t)((int)currentCategory - 1);
   RCP_cat_t oldCategory = currentCategory;
   if(newCategory < 0){

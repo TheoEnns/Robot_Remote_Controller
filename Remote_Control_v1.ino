@@ -11,6 +11,7 @@ Author: Theodore Enns
 #include "RCP_Menu.hpp"
 #include "RCP_IO_Configuration.hpp"
 #include "RCP_Tests.hpp" 
+#include "ESP32_Sound.hpp" 
 
 RCPMenu rDisp;
 
@@ -24,6 +25,7 @@ void setup() {
   initialize_Remote_Control_Topics();
   initializeIO();
   rDisp.initializeDisplay();
+  initEspSound();
   Serial.println("Init Complete");
   
 #ifdef RUN_RCP_TESTS
@@ -35,12 +37,17 @@ void setup() {
 
   rDisp.draw();
   rDisp.showDisplay();
+  
+  Serial.print("Free Heap: ");
+  Serial.println(ESP.getFreeHeap());
 }
 
 void loop() {
   elapse = micros();
   readControllerIO();
   readDispIO();
+  updateLEDStrip();
+  updateSound();
   elapse = micros() - elapse;
   // Serial.print("IO Elapse: ");
   // Serial.println(elapse);

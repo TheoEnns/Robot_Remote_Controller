@@ -6,8 +6,17 @@
 #include<SparkFun_MicroMod_Button.h>
 #include "SparkFun_Qwiic_Keypad_Arduino_Library.h" 
 #include "SparkFun_Qwiic_Joystick_Arduino_Library.h"
+#include <APA102.h>
 
 #include "RCP_Core_Topics.hpp"
+
+
+
+// LED Strip
+const uint8_t dataPin = G1;
+const uint8_t clockPin = G0;
+#define LED_STRIP_COUNT 6
+APA102<dataPin, clockPin> ledStrip;
 
 //Control IO
 int hijackTwist = false;
@@ -47,16 +56,30 @@ bool shiftClick = false;
 bool selectClick;
 bool escapeClick;
 
+//Log Data
+#define MAX_LOGS 128
+char VERBOSE_LOGS[MAX_LOGS][MAX_TOPIC_DATA_LENGTH+1];
+char INFO_LOGS[MAX_LOGS][MAX_TOPIC_DATA_LENGTH+1];
+char WARN_LOGS[MAX_LOGS][MAX_TOPIC_DATA_LENGTH+1];
+char ERROR_LOGS[MAX_LOGS][MAX_TOPIC_DATA_LENGTH+1];
+char DEBUG_LOGS[MAX_LOGS][MAX_TOPIC_DATA_LENGTH+1];
+char VERBOSE_LOGS_IDX = 0;
+char INFO_LOGS_IDX = 0;
+char WARN_LOGS_IDX = 0;
+char ERROR_LOGS_IDX = 0;
+char DEBUG_LOGS_IDX = 0;
+
+// Keypad Cycling
 #define NUM_KEYS_ON_PAD 12
-String IO_Keypad_Group_1 = "1ABC";
-String IO_Keypad_Group_2 = "2DEF";
-String IO_Keypad_Group_3 = "3GHI";
-String IO_Keypad_Group_4 = "4JKL";
-String IO_Keypad_Group_5 = "5MNO";
-String IO_Keypad_Group_6 = "6PQR";
-String IO_Keypad_Group_7 = "7STU";
-String IO_Keypad_Group_8 = "8VWX";
-String IO_Keypad_Group_9 = "9YZ";
+String IO_Keypad_Group_1 = "1ABCabc";
+String IO_Keypad_Group_2 = "2DEFdef";
+String IO_Keypad_Group_3 = "3GHIghi";
+String IO_Keypad_Group_4 = "4JKLjkl";
+String IO_Keypad_Group_5 = "5MNOmno";
+String IO_Keypad_Group_6 = "6PQRpqr";
+String IO_Keypad_Group_7 = "7STUstu";
+String IO_Keypad_Group_8 = "8VWXvwx";
+String IO_Keypad_Group_9 = "9YZyz";
 String IO_Keypad_Group_S = "* .?!";
 String IO_Keypad_Group_0 = "0@$%:";
 String IO_Keypad_Group_P = "#-/^";
@@ -83,6 +106,7 @@ void acquireHijackTwist();
 void releaseHijackTwist();
 char cycleChar(char input);
 bool sameCharGroup(char inputA, char inputB);
+void updateLEDStrip();
 
 void initializeIO(){
   if(!button.begin())
@@ -250,7 +274,8 @@ void readDispIO(){
   // bool escapeClick;
 
   if(hijackTwist){
-      shiftClick = twistR.isClicked() || twistL.isClicked();
+      escapeClick = twistR.isClicked();
+      selectClick = twistL.isClicked();
       forwardTwist = twistR.getDiff()+twistL.getDiff();
       if(forwardTwist<0){
         backwardTwist = -forwardTwist;
@@ -258,11 +283,15 @@ void readDispIO(){
       }else{
         backwardTwist = 0;
       }
+  }else{
+    escapeClick = false;
+    selectClick = false;
   }
 
-  if(button.getClickedInterrupt()) {
+  if(button.getClickedInterrupt() || RCP_DISABLE_DISP_CLICKS->getBool()) {
     dispClick = button.getClicked(); 
-  }
+  }else
+    dispClick = 0;
   char key = 0;
   keypadV = "";
   do{
@@ -338,6 +367,41 @@ char cycleChar(char input){
     }
   }
   return input;
+}
+
+void updateLEDStrip(){
+  rcp_size_t length;
+  binary_t * array = RCP_LED_Colors->getByteArray(&length);
+  // rgb_color colors[LED_STRIP_COUNT] = {
+  //     rgb_color(0x00,0x00,0x00),
+  //     rgb_color(0x00,0x00,0x00),
+  //     rgb_color(0x00,0x00,0x00),
+  //     rgb_color(0x00,0x00,0x00),
+  //     rgb_color(0x00,0x00,0x00),
+  //     rgb_color(0x00,0x00,0x00)
+  //   };
+  // rgb_color colors[LED_STRIP_COUNT] = {
+  //     rgb_color(array[RCP_CONTROLLER_LED1_COLOR*3],array[RCP_CONTROLLER_LED1_COLOR*3+1],array[RCP_CONTROLLER_LED1_COLOR*3+2]),
+  //     rgb_color(array[RCP_CONTROLLER_LED2_COLOR*3],array[RCP_CONTROLLER_LED2_COLOR*3+1],array[RCP_CONTROLLER_LED2_COLOR*3+2]),
+  //     rgb_color(array[RCP_CONTROLLER_LED3_COLOR*3],array[RCP_CONTROLLER_LED3_COLOR*3+1],array[RCP_CONTROLLER_LED3_COLOR*3+2]),
+  //     rgb_color(array[RCP_CONTROLLER_LED4_COLOR*3],array[RCP_CONTROLLER_LED4_COLOR*3+1],array[RCP_CONTROLLER_LED4_COLOR*3+2]),
+  //     rgb_color(array[RCP_CONTROLLER_LED5_COLOR*3],array[RCP_CONTROLLER_LED5_COLOR*3+1],array[RCP_CONTROLLER_LED5_COLOR*3+2]),
+  //     rgb_color(array[RCP_CONTROLLER_LED6_COLOR*3],array[RCP_CONTROLLER_LED6_COLOR*3+1],array[RCP_CONTROLLER_LED6_COLOR*3+2])
+  //   };
+  rgb_color colors[LED_STRIP_COUNT] = {
+      rgb_color(array[4*3],array[4*3+1],array[4*3+2]),
+      rgb_color(array[5*3],array[5*3+1],array[5*3+2]),
+      rgb_color(array[6*3],array[6*3+1],array[6*3+2]),
+      rgb_color(array[7*3],array[7*3+1],array[7*3+2]),
+      rgb_color(array[8*3],array[8*3+1],array[8*3+2]),
+      rgb_color(array[9*3],array[9*3+1],array[9*3+2])
+    };
+  for(int i = 4*3; i < (9*3+2);i++){
+    Serial.print(i);
+    Serial.print(" : ");
+    Serial.println(array[i]);
+  }
+  ledStrip.write(colors, LED_STRIP_COUNT);
 }
 
 

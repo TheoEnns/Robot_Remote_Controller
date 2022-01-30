@@ -1,6 +1,8 @@
 #ifndef RCP_TOPIC_HPP             		
 #define RCP_TOPIC_HPP
 
+#include <AceCRC.h> // https://github.com/bxparks/AceCRC
+
 #ifndef ARDUINO_DUE
   #define float32_t float
   #define long64_t  long
@@ -8,6 +10,18 @@
   #define char8_t   char
   #define double64_t   double
 #endif
+
+typedef enum{
+  RCP_MSG_DISC_REQUEST=1,
+  RCP_MSG_ACK,
+  RCP_MSG_ANNOUNCE_TOPIC,
+  RCP_MSG_UPDATE_TOPIC,
+  // RCP_MSG_REQUEST_UPDATE,
+  RCP_MSG_HEARTBEAT,
+  RCP_MSG_LOG,
+  RCP_MSG_TONE,
+  NUM_RCP_MSG_TYPES
+}RCP_msg_type_t;
 
 typedef enum{
   RCP_TYPE_NULL=0,

@@ -17,6 +17,10 @@
 
 // RCP_CAT_SETTINGS, For controller settings, universal init and controller updates
   RCPTopic* RCP_Command_StartStop;
+
+  RCPTopic* RCP_MUTE;
+  RCPTopic* RCP_DISABLE_DISP_CLICKS;
+
   RCPTopic* RCP_Client_Msg_Rate;
   RCPTopic* RCP_Controller_Msg_Rate;
   RCPTopic* RCP_Controller_HeartBeat_Rate;
@@ -68,6 +72,10 @@ void initialize_Remote_Control_Topics(){
     
   // RCP_CAT_SETTINGS, For controller settings, universal init and controller updates
     RCP_Command_StartStop = CreateTopic(RCP_CAT_SETTINGS,         "Set Device Mode", true);
+    
+    RCP_MUTE = CreateTopic(RCP_CAT_SETTINGS,                      "Mute Sound", true);
+    RCP_DISABLE_DISP_CLICKS = CreateTopic(RCP_CAT_SETTINGS,       "Block Display Buttons", true);
+
     RCP_Client_Msg_Rate = CreateTopic(RCP_CAT_SETTINGS,           "Client Limit Byte/s", true);
     RCP_Controller_Msg_Rate = CreateTopic(RCP_CAT_SETTINGS,       "Control Limit Byte/s", true);
     RCP_Controller_HeartBeat_Rate = CreateTopic(RCP_CAT_SETTINGS, "Control Message Rate", true);
@@ -82,6 +90,8 @@ void initialize_Remote_Control_Topics(){
                                                                  //123456789012345678901 
     
     RCP_Command_StartStop->setMenu((binary_t*)modeMenu.c_str(),modeMenu.length());
+    RCP_MUTE->setBool(true);
+    RCP_DISABLE_DISP_CLICKS->setBool(false);
     RCP_Command_StartStop->setMenuSelection(4);
     RCP_Client_Msg_Rate->setInt(12000); //Theoretical ~14k max but allow for some slop
     RCP_Controller_Msg_Rate->setInt(12000);
@@ -109,13 +119,13 @@ void initialize_Remote_Control_Topics(){
       0x0,0xFF,0x0, //RCP_CONTROLLER_RIGHT_TWIST_COLOR,
       0x0,0x0,0x0, //RCP_CONTROLLER_LEFT_TWIST_COLOR_DELTA,
       0x0,0x0,0x0, //RCP_CONTROLLER_RIGHT_TWIST_COLOR_DELTA,
-      0x0,0x0,0x0, // RCP_CONTROLLER_LED1_COLOR,
-      0x0,0x0,0x0, //RCP_CONTROLLER_LED2_COLOR,
-      0x0,0x0,0x0, //RCP_CONTROLLER_LED3_COLOR,
-      0x0,0x0,0x0, //RCP_CONTROLLER_LED4_COLOR,
-      0x0,0x0,0x0, //RCP_CONTROLLER_LED5_COLOR,
-      0x0,0x0,0x0}; //RCP_CONTROLLER_LED6_COLOR,
-    RCP_LED_Colors->setByteArray(initLEDState,numLEDs);
+      0x02,0x02,0x02, // RCP_CONTROLLER_LED1_COLOR,
+      0x02,0x02,0x02, //RCP_CONTROLLER_LED2_COLOR,
+      0x02,0x02,0x02, //RCP_CONTROLLER_LED3_COLOR,
+      0x02,0x02,0x02, //RCP_CONTROLLER_LED4_COLOR,
+      0x02,0x02,0x02, //RCP_CONTROLLER_LED5_COLOR,
+      0x02,0x02,0x02}; //RCP_CONTROLLER_LED6_COLOR,
+    RCP_LED_Colors->setByteArray(initLEDState,numLEDs*3);
     RCP_Right_Twist_Limit->setInt(0);
     RCP_Left_Twist_Limit->setInt(0);
   }
