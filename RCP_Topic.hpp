@@ -11,17 +11,24 @@
   #define double64_t   double
 #endif
 
+
+//Transmission Defines
 typedef enum{
   RCP_MSG_DISC_REQUEST=1,
   RCP_MSG_ACK,
   RCP_MSG_ANNOUNCE_TOPIC,
   RCP_MSG_UPDATE_TOPIC,
+  RCP_MSG_RECOLOR_TOPIC,
   // RCP_MSG_REQUEST_UPDATE,
   RCP_MSG_HEARTBEAT,
   RCP_MSG_LOG,
   RCP_MSG_TONE,
   NUM_RCP_MSG_TYPES
 }RCP_msg_type_t;
+
+#define RCP_END_BIT 0x7E
+using namespace ace_crc::crc16ccitt_nibble;
+crc_t crc = crc_init();
 
 typedef enum{
   RCP_TYPE_NULL=0,
@@ -128,10 +135,10 @@ class RCPTopic{
     binary_t getGreen();
     binary_t getBlue();
 
-    bool getMSG_announceTopic(binary_t* data, rcp_size_t* length);
-    bool getMSG_publishTopic(binary_t* data, rcp_size_t* length);
-    bool getMSG_changeColor(binary_t color_r, binary_t color_g, binary_t color_b, binary_t* data, rcp_size_t* length);
-    bool getMSG_changeColor(binary_t* data, rcp_size_t* length);
+    bool getMSG_announceTopic(binary_t* &data, rcp_size_t &length);
+    bool getMSG_publishTopic(binary_t* &data, rcp_size_t &length);
+    bool getMSG_changeColor(binary_t color_r, binary_t color_g, binary_t color_b, binary_t* &data, rcp_size_t &length);
+    bool getMSG_changeColor(binary_t* &data, rcp_size_t &length);
 };
 
 RCPTopic* CreateTopic(RCP_cat_t category, String name, bool doesTransmit);
@@ -624,23 +631,56 @@ String RCPTopic::valueToDisplay(){
   return _displayText;
 }
 
-bool RCPTopic::getMSG_announceTopic(binary_t* data, rcp_size_t* length){
-  //TBA
+bool RCPTopic::getMSG_announceTopic(binary_t* &data, rcp_size_t &length){
+  length = 12; //  1 for type, 1 for topic cat, 1 for topic ID, 3 color bytes, 1 for name length, 1 for data length, 1 for msg type, 2 for CRC, 1 for end bit
+  length += _name_length + _size;
+  data = (binary_t*)malloc((length)*sizeof(binary_t));
+  memcpy(data, _name, _name_length);
+  memcpy(data+_name_length, _data, _size);
+  data[length-1] = length;
+  data[length-4] = RCP_MSG_ANNOUNCE_TOPIC;
+  data[length-5] = _size;
+  data[length-6] = _name_length;
+  data[length-7] = _color_b;
+  data[length-8] = _color_g;
+  data[length-9] = _color_r;
+  data[length-10] = _id;
+  data[length-11] = _category;
+  data[length-12] = _type;
   return true;
 }
 
-bool RCPTopic::getMSG_publishTopic(binary_t* data, rcp_size_t* length){
-  //TBA
+bool RCPTopic::getMSG_publishTopic(binary_t* &data, rcp_size_t &length){
+  length = 11; //  1 for type, 1 for topic cat, 1 for topic ID, 1 for data length, 1 for msg type, 2 for CRC, 1 for end bit
+  length += _size;
+  data = (binary_t*)malloc((length)*sizeof(binary_t));
+  memcpy(data, _data, _size);
+  data[length-1] = length;
+  data[length-4] = RCP_MSG_UPDATE_TOPIC;
+  data[length-5] = _size;
+  data[length-6] = _id;
+  data[length-7] = _category;
+  data[length-8] = _type;
   return true;
 }
 
-bool RCPTopic::getMSG_changeColor(binary_t color_r, binary_t color_g, binary_t color_b, binary_t* data, rcp_size_t* length){
-  //TBA
+bool RCPTopic::getMSG_changeColor(binary_t color_r, binary_t color_g, binary_t color_b, binary_t* &data, rcp_size_t &length){
+  _color_b = color_b;
+  _color_g = color_g;
+  _color_r = color_r;
+  getMSG_changeColor(data, length);
   return true;
 }
 
-bool RCPTopic::getMSG_changeColor(binary_t* data, rcp_size_t* length){
-  //TBA
+bool RCPTopic::getMSG_changeColor(binary_t* &data, rcp_size_t &length){
+  length = 9; // 1 for topic cat, 1 for topic ID, 3 color bytes, 1 for msg type, 2 for CRC, 1 for end bit
+  data[8] = length;
+  data[5] = RCP_MSG_RECOLOR_TOPIC;
+  data[4] = _color_b;
+  data[3] = _color_g;
+  data[2] = _color_r;
+  data[1] = _id;
+  data[0] = _category;
   return true;
 }
 
