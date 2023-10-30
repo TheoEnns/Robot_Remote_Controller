@@ -64,7 +64,7 @@ void initialize_Core_Topics(){
     RCP_Device_Mode = CreateTopic(RCP_CAT_SETTINGS, "Device State", true);
     RCP_Client_Msg_Rate = CreateTopic(RCP_CAT_SETTINGS,           "Client Limit Byte/s", true);
     RCP_Controller_Msg_Rate = CreateTopic(RCP_CAT_SETTINGS,       "Control Limit Byte/s", false);
-    RCP_Controller_HeartBeat_Rate = CreateTopic(RCP_CAT_SETTINGS, "Control Message Rate", true);
+    RCP_Controller_HeartBeat_Rate = CreateTopic(RCP_CAT_SETTINGS, "Control Message Rate", false);
                                                                  //123456789012345678901 
     String modeMenu = String("#LIVE\nSTOP\nIDLE\nESTOP\nWAIT\n");
     RCP_Device_Mode->setMenu((binary_t*)modeMenu.c_str(),modeMenu.length());

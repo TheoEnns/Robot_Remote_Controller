@@ -1,7 +1,7 @@
 #ifndef RCP_IO_CONFIG_HPP             		
 #define RCP_IO_CONFIG_HPP
 
-#include<Wire.h>
+#include <Wire.h>
 #include "SparkFun_Qwiic_Twist_Arduino_Library.h" //Click here to get the library: http://librarymanager/All#SparkFun_Twist
 #include<SparkFun_MicroMod_Button.h>
 #include "SparkFun_Qwiic_Keypad_Arduino_Library.h" 

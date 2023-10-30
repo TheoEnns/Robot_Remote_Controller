@@ -21,6 +21,7 @@ unsigned long elapse;
 
 void setup() {
   Serial.begin(115200);
+  Serial1.begin(115200);
   Wire.begin();
 
   Serial.println("Startup...");
