@@ -9,19 +9,23 @@ Author: Theodore Enns
 #include "RCP_Topic.hpp" 
 #include "RCP_Core_Topics.hpp"
 #include "RCP_Controller.hpp"
-#include "RCP_Communications.hpp" 
+// #include "RCP_Communications.hpp" 
 #include "RCP_Menu.hpp"
 #include "RCP_IO_Configuration.hpp"
 #include "RCP_Tests.hpp" 
 #include "ESP32_Sound.hpp" 
+#include "RCP_Packet_Transmission.hpp"
 
 RCPMenu rDisp;
+RCPRadio RCPRadio;
 
 unsigned long elapse;
+unsigned long heartBeatTimer=0;
+int heartBeatRate = 50;
 
 void setup() {
   Serial.begin(115200);
-  Serial1.begin(115200);
+  Serial1.begin(921600);
   Wire.begin();
 
   Serial.println("Startup...");
@@ -65,5 +69,14 @@ void loop() {
   // Serial.print("Display Elapse: ");
   // Serial.println(elapse);
 
-  // Serial.println("----\n\n");
+  if(millis() > heartBeatTimer){
+    heartBeatTimer = heartBeatRate + millis();
+    elapse = micros();
+    rcp_size_t length = 15;
+    uint8_t * packet = RCP_ControlHeartBeat->getByteArray(&length);
+    RCPRadio.sendPacketToSerial(packet, length);
+    elapse = micros() - elapse;
+    // Serial.write(packet, length);
+    // Serial.println(" ");
+  }
 }

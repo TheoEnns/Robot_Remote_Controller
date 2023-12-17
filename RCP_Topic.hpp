@@ -719,6 +719,8 @@ bool RCPTopic::rawDataSet(RCP_type_t type, binary_t* data, rcp_size_t length){
   memcpy(_data, data, _size);
   _isDataFresh = false;
   _isTransmissionFresh = true;
+
+  return true;
 }
 
 #endif // RCP_TOPIC_HPP  

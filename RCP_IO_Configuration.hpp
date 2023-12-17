@@ -20,25 +20,26 @@ const uint8_t clockPin = G0;
 APA102<dataPin, clockPin> ledStrip;
 
 //Control IO
-int hijackTwist = false;
-int quickActiveMode = false;
-int quickActiveModeDebounce = false;
-int twistR_Count;
-int twistL_Count;
-int twistR_Press;
-int twistL_Press;
-int joystickRU_X;
-int joystickLU_X;
-int joystickRL_X;
-int joystickLL_X;
-int joystickRU_Y;
-int joystickLU_Y;
-int joystickRL_Y;
-int joystickLL_Y;
-int joystickRU_Press;
-int joystickLU_Press;
-int joystickRL_Press;
-int joystickLL_Press;
+const int16_t jsDeadzone = 3;
+int16_t hijackTwist = false;
+int16_t quickActiveMode = false;
+int16_t quickActiveModeDebounce = false;
+int16_t twistR_Count;
+int16_t twistL_Count;
+int16_t twistR_Press;
+int16_t twistL_Press;
+int16_t joystickRU_X;
+int16_t joystickLU_X;
+int16_t joystickRL_X;
+int16_t joystickLL_X;
+int16_t joystickRU_Y;
+int16_t joystickLU_Y;
+int16_t joystickRL_Y;
+int16_t joystickLL_Y;
+int16_t joystickRU_Press;
+int16_t joystickLU_Press;
+int16_t joystickRL_Press;
+int16_t joystickLL_Press;
 TWIST twistR;  
 TWIST twistL;  
 JOYSTICK joystickRU;
@@ -179,10 +180,14 @@ void initializeIO(){
 }
 
 int centerJS(float pos, float center){
+  int value;
   if(pos > center)
-    return constrain((int)(512.0*(pos - center)/(1024-center)+512.0),512,1023);
+    value = constrain((int)(512.0*(pos - center)/(1024-center)+512.0),512,1023);
   else
-    return constrain((int)(512.0*(pos/center)),0,512);
+    value = constrain((int)(512.0*(pos/center)),0,512);
+  if( abs(value-512) < jsDeadzone)
+    value = 512;
+  return value;
 }
 
 void readControllerIO(){
@@ -220,20 +225,20 @@ void readControllerIO(){
 
   //Schedule Message Send
   // 10 bits per JS = 5 bytes, 2 bytes per Twist = 4, 1 byte booleans = 10
-  binary_t array[15];
+  binary_t array[15]; 
   array[0] =  
-    (binary_t)(twistR_Press<<7) + (binary_t)(twistL_Press<<6)
-    + (binary_t)(joystickRU_Press<<5) + (binary_t)(joystickLU_Press<<4)
-    + (binary_t)(joystickRL_Press<<3) + (binary_t)(joystickLL_Press<<2)
+    (binary_t)(twistR_Press<<6) + (binary_t)(twistL_Press<<5)
+    + (binary_t)(joystickRU_Press<<4) + (binary_t)(joystickLU_Press<<3)
+    + (binary_t)(joystickRL_Press<<2) + (binary_t)(joystickLL_Press<<1)
     + (binary_t)quickActiveMode;
-  array[1] = highByte(joystickRU_X)<<6
-    + highByte(joystickLU_X)<<4
-    + highByte(joystickRL_X)<<2
-    + highByte(joystickLL_X);
-  array[2] = highByte(joystickRU_Y)<<6
-    + highByte(joystickLU_Y)<<4
-    + highByte(joystickRL_Y)<<2
-    + highByte(joystickLL_Y);
+  array[1] = (highByte(joystickRU_X)<<6)
+    + (highByte(joystickLU_X)<<4)
+    + (highByte(joystickRL_X)<<2)
+    + (highByte(joystickLL_X));
+  array[2] = (highByte(joystickRU_Y)<<6)
+    + (highByte(joystickLU_Y)<<4)
+    + (highByte(joystickRL_Y)<<2)
+    + (highByte(joystickLL_Y));
   array[3] = lowByte(joystickRU_X);
   array[4] = lowByte(joystickLU_X);
   array[5] = lowByte(joystickRL_X);
@@ -246,7 +251,7 @@ void readControllerIO(){
   array[12] = lowByte(twistR_Count);
   array[13] = highByte(twistL_Count);
   array[14] = lowByte(twistL_Count);
-  RCP_ControlHeartBeat->setByteArray(array,10);
+  RCP_ControlHeartBeat->setByteArray(array,15);
 
 #ifdef DEBUG_CONTROL_IO
   Serial.print(joystickRU_X);Serial.print(" \t");
@@ -262,18 +267,15 @@ void readControllerIO(){
   Serial.println(twistL_Count);
 
   Serial.println(array[0],DEC);
+  // for(int i = 0;i<15;i++){
+  //   Serial.print(array[i],DEC);
+  //   Serial.print(" ");
+  // }
+  // Serial.println("");
 #endif
 }
 
 void readDispIO(){
-  // String keypadV = "";
-  // String dispClick = "";
-  // int forwardTwist = 0;
-  // int backwardTwist = 0;
-  // bool shiftClick = false;
-  // bool selectClick;
-  // bool escapeClick;
-
   if(hijackTwist){
       escapeClick = twistR.isClicked();
       selectClick = twistL.isClicked();
@@ -305,12 +307,14 @@ void readDispIO(){
 
 void acquireHijackTwist(){
   twistL.setColor( 255,255,255); 
-  twistL.setCount(twistR_Count);
+  twistL.setCount(0);
+  // twistL.setCount(twistL_Count);
   twistL.connectColor(0,0,0); 
   twistL.setLimit(0);
     
   twistR.setColor( 255,255,255); 
-  twistR.setCount(twistL_Count);
+  twistR.setCount(0);
+  // twistR.setCount(twistR_Count);
   twistR.connectColor(0,0,0); 
   twistR.setLimit(0);
   hijackTwist = true;
@@ -322,7 +326,7 @@ void releaseHijackTwist(){
   twistL.setColor(  array[RCP_CONTROLLER_LEFT_TWIST_COLOR*3],
                     array[RCP_CONTROLLER_LEFT_TWIST_COLOR*3+1],
                     array[RCP_CONTROLLER_LEFT_TWIST_COLOR*3+2]); 
-  twistL.setCount(twistR_Count);
+  twistL.setCount(twistL_Count);
   array = RCP_LED_Colors->getByteArray(&size);
   twistL.connectColor(array[RCP_CONTROLLER_LEFT_TWIST_COLOR_DELTA*3],
                       array[RCP_CONTROLLER_LEFT_TWIST_COLOR_DELTA*3+1],
@@ -332,7 +336,7 @@ void releaseHijackTwist(){
   twistR.setColor( array[RCP_CONTROLLER_RIGHT_TWIST_COLOR*3],
                     array[RCP_CONTROLLER_RIGHT_TWIST_COLOR*3+1],
                     array[RCP_CONTROLLER_RIGHT_TWIST_COLOR*3+2]); 
-  twistR.setCount(twistL_Count);
+  twistR.setCount(twistR_Count);
   array = RCP_LED_Colors->getByteArray(&size);
   twistR.connectColor(array[RCP_CONTROLLER_RIGHT_TWIST_COLOR_DELTA*3],
                       array[RCP_CONTROLLER_RIGHT_TWIST_COLOR_DELTA*3+1],
@@ -397,11 +401,6 @@ void updateLEDStrip(){
       rgb_color(array[8*3],array[8*3+1],array[8*3+2]),
       rgb_color(array[9*3],array[9*3+1],array[9*3+2])
     };
-  for(int i = 4*3; i < (9*3+2);i++){
-    Serial.print(i);
-    Serial.print(" : ");
-    Serial.println(array[i]);
-  }
   ledStrip.write(colors, LED_STRIP_COUNT);
 }
 
