@@ -333,7 +333,7 @@ void releaseHijackTwist(){
                       array[RCP_CONTROLLER_LEFT_TWIST_COLOR_DELTA*3+2]); 
   twistL.setLimit(RCP_Right_Twist_Limit->getInt());
     
-  twistR.setColor( array[RCP_CONTROLLER_RIGHT_TWIST_COLOR*3],
+  twistR.setColor(  array[RCP_CONTROLLER_RIGHT_TWIST_COLOR*3],
                     array[RCP_CONTROLLER_RIGHT_TWIST_COLOR*3+1],
                     array[RCP_CONTROLLER_RIGHT_TWIST_COLOR*3+2]); 
   twistR.setCount(twistR_Count);

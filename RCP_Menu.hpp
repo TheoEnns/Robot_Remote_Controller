@@ -244,7 +244,8 @@ void RCPMenu::initializeDisplay(){
       (displayWind.xMax-displayWind.xMin+1)*
       (displayWind.yMax-displayWind.yMin+1),
       sizeof(ILI9341_color_16_t),false);
-  myTFT.pCurrentWindow = &displayWind;     
+  myTFT.pCurrentWindow = &displayWind;                              
+  myTFT.buffer();   
 
   //Data Entry Window
   //wind_info_t entryWind;
@@ -252,7 +253,7 @@ void RCPMenu::initializeDisplay(){
   entryWind.xMin = 0;
   entryWind.xMax = 239;
   entryWind.yMin = TEXT_BOX_HEIGHT*(4)+1;
-  entryWind.yMax = TEXT_BOX_HEIGHT*(2*7)+1;//149 + TEXT_BOX_HEIGHT*(2)+1;
+  entryWind.yMax = TEXT_BOX_HEIGHT*(2*(NUM_DISP_TOPICS-1))+1;//149 + TEXT_BOX_HEIGHT*(2)+1;
   entryWind.cursorX = entryWind.xReset = 2;
   entryWind.cursorY = entryWind.yReset = 4;
   // entryWind.xReset = 0;
@@ -622,35 +623,45 @@ void RCPMenu::draw(){
     if(doRedrawEntrySpace){
       switch(entryType){
         case RCP_TYPE_NULL:
+          // Serial.print("RCP_TYPE_NULL");
           break;
         case RCP_TYPE_STRING:
+          // Serial.print("RCP_TYPE_STRING");
           if(currentCategory == RCP_CAT_LOGS)
             drawLogs();
           else
             drawStringEntry();
           break;
         case RCP_TYPE_BYTE_ARRAY:
+          // Serial.print("RCP_TYPE_BYTE_ARRAY");
           drawStringEntry();
           break;
         case RCP_TYPE_FLOAT:
+          // Serial.print("RCP_TYPE_FLOAT");
           drawDecimalEntry();
           break;
         case RCP_TYPE_LONG:
+          // Serial.print("RCP_TYPE_LONG");
           drawIntegarEntry();
           break;
         case RCP_TYPE_INT:
+          // Serial.print("RCP_TYPE_INT");
           drawIntegarEntry();
           break;
         case RCP_TYPE_BOOL:
+          // Serial.print("RCP_TYPE_BOOL");
           drawBoolEntry();
           break;
         case RCP_TYPE_CHAR:
+          // Serial.print("RCP_TYPE_CHAR");
           drawStringEntry();
           break;
         case RCP_TYPE_DOUBLE:
+          // Serial.print("RCP_TYPE_DOUBLE");
           drawDecimalEntry();
           break;
         case RCP_TYPE_MENU:
+          // Serial.print("RCP_TYPE_MENU");
           drawSelectionMenuEntry();
           break;
         default:
@@ -829,6 +840,8 @@ void RCPMenu::drawInitEntry(){
   myTFT.pCurrentWindow = (&(topicNameWind[1]));
   myTFT.setCurrentWindowColorSequence((color_t)&color_black);
   myTFT.fillWindow(); 
+  myTFT.setCurrentWindowColorSequence((color_t)&color_white);
+  myTFT.resetTextCursor();
   switch(entryType){
     case RCP_TYPE_NULL:
       break;
@@ -867,11 +880,29 @@ void RCPMenu::drawInitEntry(){
   myTFT.pCurrentWindow = (&(topicValueWind[1]));
   myTFT.setCurrentWindowColorSequence((color_t)&color_black);
   myTFT.fillWindow(); 
+  myTFT.setCurrentWindowColorSequence((color_t)&color_white);
+  myTFT.resetTextCursor();
   if(currentCategory != RCP_CAT_STATUS && currentCategory != RCP_CAT_LOGS)
     ;
   else
     myTFT.print("Read-Only");
   myTFT.show();
+
+  myTFT.pCurrentWindow = (&(topicNameWind[NUM_DISP_TOPICS-1]));
+  myTFT.setCurrentWindowColorSequence((color_t)&color_darkGrey);
+  myTFT.fillWindow(); 
+  myTFT.show();
+  myTFT.pCurrentWindow = (&(topicValueWind[NUM_DISP_TOPICS-1]));
+  myTFT.setCurrentWindowColorSequence((color_t)&color_darkGrey);
+  myTFT.fillWindow(); 
+  myTFT.show();
+  myTFT.setCurrentWindowColorSequence((color_t)&color_white);
+
+  // Serial.println("Selection Started");
+  // Serial.println("Name: ");
+  // Serial.println(textT);
+  // Serial.println("Value: ");
+  // Serial.println(textV);
 }
 
 void RCPMenu::clearEntry(){

@@ -1,7 +1,7 @@
 #include "RCP_Packet_Transmission.hpp"
 #include "RCP_IO_Interface.hpp"
 
-RCPRadio mRadio;
+RCPRadio mRadio(&Serial1);
 
 void setup() {
   SerialUSB.begin(115200);

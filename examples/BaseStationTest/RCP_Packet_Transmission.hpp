@@ -10,7 +10,7 @@
 
 class RCPRadio{
   private:
-    Stream * SerailX;
+    Stream * SerialX;
 
     size_t bLength; //Size of send and receive buffers
     int finishedPacketLength = 0;
@@ -36,7 +36,7 @@ class RCPRadio{
     void sendBuffer();
 
   public:
-    RCPRadio(size_t bLength=512);
+    RCPRadio(Stream * _SerailX, size_t _bLength=512);
     ~RCPRadio();
 
     
@@ -47,7 +47,9 @@ class RCPRadio{
     size_t getPacketLength();
 };
 
-RCPRadio::RCPRadio(size_t bLength){
+RCPRadio::RCPRadio(Stream * _SerialX, size_t _bLength){
+  SerialX = _SerialX;
+  bLength = _bLength;
   sBuffer = (uint8_t*)malloc(sizeof(uint8_t)*(bLength));
   rBuffer = (uint8_t*)malloc(sizeof(uint8_t)*(bLength));
 
@@ -81,28 +83,28 @@ void RCPRadio::sendPacketToSerial(uint8_t * packet, size_t pLength, bool flush){
 
   sendBuffer();
   if(flush){
-    Serial1.flush();
+    SerialX->flush();
   }
 }
 
 void RCPRadio::sendBuffer(){
-  Serial1.write(terminalByte);
-  Serial1.write(sBuffer,sLength);
+  SerialX->write(terminalByte);
+  SerialX->write(sBuffer,sLength);
   uint bufferCRC = sCRC.calc();
   char bufferCRCHigh = bufferCRC>>8;
   char bufferCRCLow = bufferCRC & terminalByte;
   if(bufferCRCHigh==terminalByte){
-    Serial1.write(escapeByte);
+    SerialX->write(escapeByte);
     // SerialUSB.println("INFO: Generated Escape Char for High CRC");
   }
-  Serial1.write(bufferCRCHigh);
+  SerialX->write(bufferCRCHigh);
   if(bufferCRCLow==terminalByte){
-    Serial1.write(escapeByte);
+    SerialX->write(escapeByte);
     // SerialUSB.println("INFO: Generated Escape Char for Low CRC");
   }
-  Serial1.write(bufferCRCLow);
-  Serial1.write(placeholderByte);
-  Serial1.write(terminalByte);
+  SerialX->write(bufferCRCLow);
+  SerialX->write(placeholderByte);
+  SerialX->write(terminalByte);
   // SerialUSB.print("INFO: Sent CRC of ");
   // SerialUSB.print(bufferCRCHigh,DEC);
   // SerialUSB.print(" ");
@@ -114,8 +116,8 @@ void RCPRadio::sendBuffer(){
     if(readIdx >= bLength){
       readIdx = 0;
     }
-    while(Serial1.available()){
-      int input = Serial1.read();
+    while(SerialX->available()){
+      int input = SerialX->read();
       SerialUSB.print(input);
       if(input == terminalByte){
         if(lastRead == escapeByte){
