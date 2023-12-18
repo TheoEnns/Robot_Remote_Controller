@@ -4,7 +4,7 @@ Author: Theodore Enns
 
 //Compile Flags for Debug
 // #define DEBUG_CONTROL_IO 1
-#define RUN_RCP_TESTS 1
+// #define RUN_RCP_TESTS 1
 // #define DEBUG_THREAD_TIME 1
  
 #include "RCP_Topic.hpp" 
