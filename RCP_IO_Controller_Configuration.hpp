@@ -1,5 +1,5 @@
-#ifndef RCP_IO_CONFIG_HPP             		
-#define RCP_IO_CONFIG_HPP
+#ifndef RCP_IO_CONTROLLER_CONFIG_HPP             		
+#define RCP_IO_CONTROLLER_CONFIG_HPP
 
 #include <Wire.h>
 #include "SparkFun_Qwiic_Twist_Arduino_Library.h" //Click here to get the library: http://librarymanager/All#SparkFun_Twist
@@ -405,4 +405,4 @@ void updateLEDStrip(){
 }
 
 
-#endif //RCP_IO_CONFIG_HPP
+#endif //RCP_IO_CONTROLLER_CONFIG_HPP

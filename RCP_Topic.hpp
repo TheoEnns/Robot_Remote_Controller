@@ -67,19 +67,19 @@ typedef uint8_t ID_t;
 typedef uint8_t rcp_size_t;
 typedef uint8_t binary_t;
 
-#define MAX_TOPIC_ID 256 //Maximum IDs that can be registered to a category
+#define MAX_TOPIC_ID 128 //Maximum IDs that can be registered to a category
 #define MAX_TOPIC_DATA_LENGTH 128
 #define MAX_TOPIC_NAME_LENGTH 21
-#define RCP_FP_PRES 7
+#define RCP_FP_PRES 7 //floating point precision for transmission
 
 class RCPTopic{
   private:
     RCP_cat_t   _category;
     ID_t        _id;
     RCP_type_t  _type;
-    rcp_size_t     _name_length; 
+    rcp_size_t  _name_length; 
     binary_t*   _name; 
-    rcp_size_t     _size; 
+    rcp_size_t  _size; 
     binary_t*   _data; 
     bool        _isDataFresh;
     bool        _isTransmissionFresh;
@@ -96,8 +96,8 @@ class RCPTopic{
     RCPTopic(RCP_cat_t category, ID_t id, String name, bool doesTransmit);
     ~RCPTopic();
 
-    // void setName(String name);
-    // void setName(binary_t data[], rcp_size_t name_length);
+    void setName(String name);
+    void setName(binary_t data[], rcp_size_t name_length);
     void setString(String data);
     void setByteArray(binary_t* data, rcp_size_t length); //does not copy!
     void setFloat(float32_t data);
@@ -145,6 +145,7 @@ class RCPTopic{
 
 RCPTopic* CreateTopic(RCP_cat_t category, String name, bool doesTransmit);
 void getRCPArrayFromCategory(RCP_cat_t category, rcp_size_t** size, RCPTopic**topicList);
+RCPTopic* GetRCPTopic(RCP_cat_t category, ID_t ident);
 
 
 RCPTopic* rcpOperationsList[MAX_TOPIC_ID];      // For operational control values, Client inits and then Controller and client update
@@ -206,6 +207,13 @@ RCPTopic* CreateTopic(RCP_cat_t category, String name, bool doesTransmit){
   return newTopic;
 }
 
+RCPTopic* GetRCPTopic(RCP_cat_t category, ID_t ident){
+  rcp_size_t * currentIDs;
+  RCPTopic ** array;
+  getRCPArrayFromCategory(category, &currentIDs, &array);
+  return array[ident];
+}
+
 RCPTopic::RCPTopic(RCP_cat_t category, ID_t id, String name, bool doesTransmit){
   _category = category;
   _id = id;
@@ -236,33 +244,33 @@ RCPTopic::~RCPTopic(){
     free(_data);
   }
 }
-/*  // Disabled Name Change; these are fixed by design
-void setName(String name){
+
+void RCPTopic::setName(String name){
   free(_name);
   _displayName = name;
   _name_length = _displayName.length(); //note: no trailing null char
-  if(_name_length>MAX_TOPIC_NAME_LENGTH){
+  if(_name_length > MAX_TOPIC_NAME_LENGTH){
     _name_length = MAX_TOPIC_NAME_LENGTH;
     _displayName = _displayName.substring(0,MAX_TOPIC_NAME_LENGTH);
   }
   _name = (binary_t*)malloc(sizeof(binary_t)*(_name_length+1)); //last byte is null
-  _name.getBytes(_name,_name_length);
+  name.getBytes(_name,_name_length);
   _isDataFresh = _isTransmissionFresh = false;
 }
 
-void setName(binary_t data[], rcp_size_t name_length){
+void RCPTopic::setName(binary_t data[], rcp_size_t name_length){
   free(_name);
-  _displayName = String(data);
+  _displayName = String((char*)data);
   _name_length = _displayName.length(); //note: no trailing null char
-  if(_name_length>MAX_TOPIC_NAME_LENGTH){
+  if(_name_length > MAX_TOPIC_NAME_LENGTH){
     _name_length = MAX_TOPIC_NAME_LENGTH;
     _displayName = _displayName.substring(0,MAX_TOPIC_NAME_LENGTH);
   }
   _name = (binary_t*)malloc(sizeof(binary_t)*(_name_length+1));
-  _name.getBytes(_name,_name_length);
+  _displayName.getBytes(_name,_name_length);
   _isDataFresh = _isTransmissionFresh = false;
 }
-*/    
+
 void RCPTopic::setString(String data){
   if(_type != RCP_TYPE_NULL){
     free(_data);

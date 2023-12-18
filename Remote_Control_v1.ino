@@ -12,7 +12,7 @@ Author: Theodore Enns
 #include "RCP_Controller.hpp"
 // #include "RCP_Communications.hpp" 
 #include "RCP_Menu.hpp"
-#include "RCP_IO_Configuration.hpp"
+#include "RCP_IO_Controller_Configuration.hpp"
 #include "RCP_Tests.hpp" 
 #include "ESP32_Sound.hpp" 
 #include "RCP_Packet_Transmission.hpp"
@@ -80,8 +80,8 @@ void loop() {
     heartBeatTimer = heartBeatRate + millis();
     elapse = micros();
     rcp_size_t length = 15;
-    uint8_t * packet = RCP_ControlHeartBeat->getByteArray(&length);
-    RCPRadio.sendPacketToSerial(packet, length);
+    // uint8_t * packet = RCP_ControlHeartBeat->getByteArray(&length);
+    // RCPRadio.sendPacketToSerial(packet, length);
     elapse = micros() - elapse;
     // Serial.write(packet, length);
     // Serial.println(" ");
