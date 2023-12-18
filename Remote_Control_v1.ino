@@ -5,6 +5,7 @@ Author: Theodore Enns
 //Compile Flags for Debug
 // #define DEBUG_CONTROL_IO 1
 #define RUN_RCP_TESTS 1
+// #define DEBUG_THREAD_TIME 1
  
 #include "RCP_Topic.hpp" 
 #include "RCP_Core_Topics.hpp"
@@ -17,7 +18,7 @@ Author: Theodore Enns
 #include "RCP_Packet_Transmission.hpp"
 
 RCPMenu rDisp;
-RCPRadio RCPRadio;
+RCPRadio RCPRadio(&Serial1);
 
 unsigned long elapse;
 unsigned long heartBeatTimer=0;
@@ -57,8 +58,11 @@ void loop() {
   updateLEDStrip();
   updateSound();
   elapse = micros() - elapse;
-  // Serial.print("IO Elapse: ");
-  // Serial.println(elapse);
+
+#ifdef DEBUG_THREAD_TIME
+  Serial.print("IO Elapse: ");
+  Serial.println(elapse);
+#endif
 
   // RCP_Controller_HeartBeat_Rate->setFloat(RCP_Controller_HeartBeat_Rate->getFloat()+0.1);
   elapse = micros();
@@ -66,8 +70,11 @@ void loop() {
   rDisp.draw();
   rDisp.showDisplay();
   elapse = micros() - elapse;
-  // Serial.print("Display Elapse: ");
-  // Serial.println(elapse);
+  
+#ifdef DEBUG_THREAD_TIME
+  Serial.print("Display Elapse: ");
+  Serial.println(elapse);
+#endif
 
   if(millis() > heartBeatTimer){
     heartBeatTimer = heartBeatRate + millis();
@@ -78,5 +85,10 @@ void loop() {
     elapse = micros() - elapse;
     // Serial.write(packet, length);
     // Serial.println(" ");
+    
+#ifdef DEBUG_THREAD_TIME
+  Serial.print("Heartbeat Send Elapse: ");
+  Serial.println(elapse);
+#endif
   }
 }
