@@ -18,9 +18,8 @@
   RCPTopic* LOGT_DEBUG;
 
 // RCP_CAT_SETTINGS, For controller settings, universal init and controller updates
-  RCPTopic* RCP_Client_Msg_Rate;
-  RCPTopic* RCP_Controller_Msg_Rate;
-  RCPTopic* RCP_Controller_HeartBeat_Rate;
+  RCPTopic* RCP_Msg_Rate;
+  RCPTopic* RCP_HeartBeat_Rate;
   RCPTopic* RCP_MUTE;
   RCPTopic* RCP_DISABLE_DISP_CLICKS;
 
@@ -74,13 +73,11 @@ void initialize_Core_Topics(){
     LOGT_DEBUG = CreateTopic(RCP_CAT_LOGS, "Debug:", true);
     
   // RCP_CAT_SETTINGS, For controller settings, universal init and controller updates
-    RCP_Client_Msg_Rate = CreateTopic(RCP_CAT_SETTINGS,           "Client Limit Byte/s", true);
-    RCP_Controller_Msg_Rate = CreateTopic(RCP_CAT_SETTINGS,       "Control Limit Byte/s", true);
-    RCP_Controller_HeartBeat_Rate = CreateTopic(RCP_CAT_SETTINGS, "Control Message Rate", true);
+    RCP_Msg_Rate = CreateTopic(RCP_CAT_SETTINGS,           "Client Limit Frq ms", true);
+    RCP_HeartBeat_Rate = CreateTopic(RCP_CAT_SETTINGS,     "Client Message Frq", true);
                                                                  //123456789012345678901 
-    RCP_Client_Msg_Rate->setInt(100); //Theoretical ~14k max for UI but Xbee fails around 2300 bytes/s
-    RCP_Controller_Msg_Rate->setInt(100); //Theoretical ~14k max for UI but Xbee fails around 2300 bytes/s
-    RCP_Controller_HeartBeat_Rate->setInt(50); //ms between updates
+    RCP_Msg_Rate->setInt(100); //Theoretical ~14k max for UI but Xbee fails around 2300 bytes/s
+    RCP_HeartBeat_Rate->setInt(50); //ms between updates
         
     RCP_MUTE = CreateTopic(RCP_CAT_SETTINGS,                      "Mute Sound", false);
     RCP_DISABLE_DISP_CLICKS = CreateTopic(RCP_CAT_SETTINGS,       "Block Display Buttons", false);
@@ -95,8 +92,6 @@ void initialize_Core_Topics(){
                                                                   //123456789012345678901 
     RCP_MUTE->setBool(true);
     RCP_DISABLE_DISP_CLICKS->setBool(false);
-    RCP_Controller_Msg_Rate->setInt(12000);
-    RCP_Controller_HeartBeat_Rate->setInt(7);
 
     RCP_JS_RU_CenterX->setInt(512);
     RCP_JS_LU_CenterX->setInt(512);

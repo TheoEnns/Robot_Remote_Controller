@@ -12,23 +12,20 @@
 #endif
 
 
-//Transmission Defines
+//Transmission Defines 
+//   - note not all zre implemented yet; some are placeholders
 typedef enum{
   RCP_MSG_DISC_REQUEST=1,
   RCP_MSG_ACK,
   RCP_MSG_ANNOUNCE_TOPIC,
   RCP_MSG_UPDATE_TOPIC,
   RCP_MSG_RECOLOR_TOPIC,
-  // RCP_MSG_REQUEST_UPDATE,
+  RCP_MSG_REQUEST_UPDATE,
   RCP_MSG_HEARTBEAT,
   RCP_MSG_LOG,
   RCP_MSG_TONE,
   NUM_RCP_MSG_TYPES
 }RCP_msg_type_t;
-
-#define RCP_END_BIT 0x7E
-using namespace ace_crc::crc16ccitt_nibble;
-crc_t rcp_crc = crc_init();
 
 typedef enum{
   RCP_TYPE_NULL=0,
@@ -60,6 +57,7 @@ typedef enum{
   RCP_MODE_STOP,
   RCP_MODE_IDLE,
   RCP_MODE_WAIT,
+  RCP_MODE_INIT,
   NUM_MODE_TYPES
 }RCP_mode_t; // Note must fit in a char
 
@@ -81,7 +79,8 @@ class RCPTopic{
     binary_t*   _name; 
     rcp_size_t  _size; 
     binary_t*   _data; 
-    bool        _isDataFresh;
+    bool        _isDisplayValueFresh; 
+    bool        _isColorFresh;
     bool        _isTransmissionFresh;
     bool        _doesTransmit;
     // void        freeData();
@@ -91,6 +90,9 @@ class RCPTopic{
     binary_t _color_r;		         
     binary_t _color_g;		         
     binary_t _color_b;
+    
+    bool rawColorSet(binary_t* data, rcp_size_t length);
+    bool rawDataSet(RCP_type_t type, binary_t* data, rcp_size_t length);
 
   public:
     RCPTopic(RCP_cat_t category, ID_t id, String name, bool doesTransmit);
@@ -108,7 +110,9 @@ class RCPTopic{
     void setDouble(double64_t data);
     void setMenu(binary_t* data, rcp_size_t length);
     void setMenuSelection(binary_t selection);
-    void setFresh();
+    void setDisplayFresh(bool fresh=true);
+    void setTransmissionFresh(bool fresh=true);
+    void setColorFresh(bool fresh=true);
 
     String getName();
     char* getNameRaw();
@@ -127,7 +131,10 @@ class RCPTopic{
     String getMenuOption(binary_t option);
     String getMenuOptions();
 
-    bool getFresh();
+    bool getDisplayFresh();
+    bool getTransmissionFresh();
+    bool getColorFresh();
+
     bool getTransmissible();
 
     String valueToDisplay();
@@ -138,15 +145,17 @@ class RCPTopic{
 
     bool getMSG_announceTopic(binary_t* data, rcp_size_t &length);
     bool getMSG_publishTopic(binary_t* data, rcp_size_t &length);
-    bool getMSG_changeColor(binary_t color_r, binary_t color_g, binary_t color_b, binary_t* data, rcp_size_t &length);
     bool getMSG_changeColor(binary_t* data, rcp_size_t &length);
-    bool rawDataSet(RCP_type_t type, binary_t* data, rcp_size_t length);
 };
 
 RCPTopic* CreateTopic(RCP_cat_t category, String name, bool doesTransmit);
 void getRCPArrayFromCategory(RCP_cat_t category, rcp_size_t** size, RCPTopic**topicList);
 RCPTopic* GetRCPTopic(RCP_cat_t category, ID_t ident);
 
+RCP_msg_type_t getMessageType(binary_t* data, rcp_size_t length);
+ID_t getMessageID(binary_t* data, rcp_size_t length);
+RCP_cat_t getMessageCat(binary_t* data, rcp_size_t length);
+RCPTopic* GetRCPTopicFromMsg(binary_t* data, rcp_size_t length, bool createIfNull);
 
 RCPTopic* rcpOperationsList[MAX_TOPIC_ID];      // For operational control values, Client inits and then Controller and client update
 rcp_size_t Operations_RCP_Count = 0;
@@ -228,8 +237,9 @@ RCPTopic::RCPTopic(RCP_cat_t category, ID_t id, String name, bool doesTransmit){
   _type = RCP_TYPE_NULL;
   _size = 0;
   _data = NULL;
-  _isDataFresh = false;
+  _isDisplayValueFresh = false;
   _isTransmissionFresh = false;
+  _isColorFresh = false;
   _doesTransmit = doesTransmit;
 
   _displayText = String("NULL");
@@ -255,7 +265,7 @@ void RCPTopic::setName(String name){
   }
   _name = (binary_t*)malloc(sizeof(binary_t)*(_name_length+1)); //last byte is null
   name.getBytes(_name,_name_length);
-  _isDataFresh = _isTransmissionFresh = false;
+  _isDisplayValueFresh = _isTransmissionFresh = false;
 }
 
 void RCPTopic::setName(binary_t data[], rcp_size_t name_length){
@@ -268,7 +278,7 @@ void RCPTopic::setName(binary_t data[], rcp_size_t name_length){
   }
   _name = (binary_t*)malloc(sizeof(binary_t)*(_name_length+1));
   _displayName.getBytes(_name,_name_length);
-  _isDataFresh = _isTransmissionFresh = false;
+  _isDisplayValueFresh = _isTransmissionFresh = false;
 }
 
 void RCPTopic::setString(String data){
@@ -286,7 +296,7 @@ void RCPTopic::setString(String data){
 
   _data = (binary_t*)malloc(sizeof(binary_t)*_size);
   data.getBytes(_data, _size);
-  _isDataFresh = _isTransmissionFresh = false;
+  _isDisplayValueFresh = _isTransmissionFresh = false;
 }
 
 void RCPTopic::setByteArray(binary_t* data, rcp_size_t length){
@@ -303,7 +313,7 @@ void RCPTopic::setByteArray(binary_t* data, rcp_size_t length){
   }
 
   memcpy(_data, data, _size);
-  _isDataFresh = _isTransmissionFresh = false;
+  _isDisplayValueFresh = _isTransmissionFresh = false;
 }
 
 void RCPTopic::setFloat(float32_t data){
@@ -316,7 +326,7 @@ void RCPTopic::setFloat(float32_t data){
     _type = RCP_TYPE_FLOAT;
   }
   memcpy(_data, &data, _size);
-  _isDataFresh = _isTransmissionFresh = false;
+  _isDisplayValueFresh = _isTransmissionFresh = false;
 }
 
 void RCPTopic::setLong(long64_t data){
@@ -329,7 +339,7 @@ void RCPTopic::setLong(long64_t data){
       _data = (binary_t*)malloc(_size); //For speed we do not want to reallocate though at the cost of space
   }
   memcpy(_data, &data, _size);
-  _isDataFresh = _isTransmissionFresh = false;
+  _isDisplayValueFresh = _isTransmissionFresh = false;
 }
 
 void RCPTopic::setInt(int32_t data){
@@ -343,7 +353,7 @@ void RCPTopic::setInt(int32_t data){
   }
 
   memcpy(_data, &data, _size);
-  _isDataFresh = _isTransmissionFresh = false;
+  _isDisplayValueFresh = _isTransmissionFresh = false;
 }
 
 void RCPTopic::setBool(bool data){
@@ -356,7 +366,7 @@ void RCPTopic::setBool(bool data){
     _data = (binary_t*)malloc(_size); //For speed we do not want to reallocate though at the cost of space
   }
   memcpy(_data, &data, _size);
-  _isDataFresh = _isTransmissionFresh = false;
+  _isDisplayValueFresh = _isTransmissionFresh = false;
 }
 
 void RCPTopic::setChar(char8_t data){
@@ -370,7 +380,7 @@ void RCPTopic::setChar(char8_t data){
   }
 
   memcpy(_data, &data, _size);
-  _isDataFresh = _isTransmissionFresh = false;
+  _isDisplayValueFresh = _isTransmissionFresh = false;
 }
 
 void RCPTopic::setDouble(double64_t data){
@@ -384,7 +394,7 @@ void RCPTopic::setDouble(double64_t data){
   }
 
   memcpy(_data, &data, _size);
-  _isDataFresh = _isTransmissionFresh = false;
+  _isDisplayValueFresh = _isTransmissionFresh = false;
 }
 
 void RCPTopic::setMenu(binary_t* data, rcp_size_t length){
@@ -406,7 +416,7 @@ void RCPTopic::setMenu(binary_t* data, rcp_size_t length){
   }
 
   memcpy(_data, data, _size);
-  _isDataFresh = _isTransmissionFresh = false;
+  _isDisplayValueFresh = _isTransmissionFresh = false;
 }
 
 void RCPTopic::setMenuSelection(binary_t selection){
@@ -414,19 +424,31 @@ void RCPTopic::setMenuSelection(binary_t selection){
     return;
   }
   _data[0] = selection;
-  _isDataFresh = _isTransmissionFresh = false;
+  _isDisplayValueFresh = _isTransmissionFresh = false;
 }
 
-void RCPTopic::setFresh(){
-  if(!_isDataFresh){
-    valueToDisplay();
-  }
+void RCPTopic::setDisplayFresh(bool fresh){
+  if(fresh)
+    if(!_isDisplayValueFresh){
+      valueToDisplay();
+    }
+  _isDisplayValueFresh = fresh;
+}
+
+void RCPTopic::setTransmissionFresh(bool fresh){
+  _isTransmissionFresh = fresh;
+}
+
+void RCPTopic::setColorFresh(bool fresh){
+  _isColorFresh = fresh;
 }
 
 void RCPTopic::setColor(binary_t color_r, binary_t color_g, binary_t color_b){
   _color_r = color_r;		         
   _color_g = color_g;		         
   _color_b = color_b;	
+  _isColorFresh = false;
+  _isDisplayValueFresh = false;
 }
 
 binary_t RCPTopic::getRed(){
@@ -458,8 +480,8 @@ RCP_type_t RCPTopic::getType(){
 }
 
 String RCPTopic::getString(){
-  if(!_isDataFresh){
-    setFresh();
+  if(!_isDisplayValueFresh){
+    setDisplayFresh();
   }
   return _displayText;
 }
@@ -594,8 +616,16 @@ binary_t RCPTopic::getMenuSelection(){
   }
 }
 
-bool RCPTopic::getFresh(){
-  return _isDataFresh;
+bool RCPTopic::getDisplayFresh(){
+  return _isDisplayValueFresh;
+}
+
+bool RCPTopic::getTransmissionFresh(){
+  return _isTransmissionFresh;
+}
+
+bool RCPTopic::getColorFresh(){
+  return _isColorFresh;
 }
 
 bool RCPTopic::getTransmissible(){
@@ -604,7 +634,7 @@ bool RCPTopic::getTransmissible(){
 
 //Does not update the display text!
 String RCPTopic::valueToDisplay(){
-  if(!_isDataFresh){
+  if(!_isDisplayValueFresh){
     switch(_type){
       case RCP_TYPE_NULL:
         _displayText =  String("NULL");
@@ -640,93 +670,163 @@ String RCPTopic::valueToDisplay(){
         _displayText = String("NULL");
         break;
     }
-    _isDataFresh = true;
+    _isDisplayValueFresh = true;
   }
   return _displayText;
 }
 
 bool RCPTopic::getMSG_announceTopic(binary_t* data, rcp_size_t &length){
-  length = 12; //  1 for type, 1 for topic cat, 1 for topic ID, 3 color bytes, 1 for name length, 1 for data length, 1 for msg type, 2 for CRC, 1 for end bit
-  length += _name_length + _size;
   // data = (binary_t*)malloc((length)*sizeof(binary_t));
-  memcpy(data, _name, _name_length);
-  memcpy(data+_name_length, _data, _size);
-  data[length-1] = length;
-  data[length-4] = RCP_MSG_ANNOUNCE_TOPIC;
-  data[length-5] = _size;
-  data[length-6] = _name_length;
-  data[length-7] = _color_b;
-  data[length-8] = _color_g;
-  data[length-9] = _color_r;
-  data[length-10] = _id;
-  data[length-11] = _category;
-  data[length-12] = _type;
+  length = 0;
+  
+  data[length] = RCP_MSG_ANNOUNCE_TOPIC;
+  length += 1;
 
-  rcp_crc = crc_calculate(data, length-3);
-  data[length-2] = lowByte(rcp_crc);
-  data[length-3] =highByte(rcp_crc);
+  data[length] = _id;
+  length += 1;
+
+  data[length] = _category;
+  length += 1;
+
+  data[length] = _type;
+  length += 1;
+
+  data[length] = _size;
+  length += 1;
+
+  data[length] = _name_length;
+  length += 1;
+
+  data[length] = _color_r;
+  length += 1;
+
+  data[length] = _color_g;
+  length += 1;
+
+  data[length] = _color_b;
+  length += 1;
+
+  memcpy(data + length, _name, _name_length);
+  length += _name_length;
+
+  memcpy(data + length, _data, _size);
+  length += _size;
+
   return true;
 }
 
 bool RCPTopic::getMSG_publishTopic(binary_t* data, rcp_size_t &length){
-  length = 11; //  1 for type, 1 for topic cat, 1 for topic ID, 1 for data length, 1 for msg type, 2 for CRC, 1 for end bit
-  length += _size;
-  // data = (binary_t*)malloc((length)*sizeof(binary_t));
+  length = 0;
+
+  data[length] = RCP_MSG_UPDATE_TOPIC;
+  length += 1;
+
+  data[length] = _id;
+  length += 1;
+
+  data[length] = _category;
+  length += 1;
+
+  data[length] = _type;
+  length += 1;
+  
   memcpy(data, _data, _size);
-  data[length-1] = length;
-  data[length-4] = RCP_MSG_UPDATE_TOPIC;
-  data[length-5] = _size;
-  data[length-6] = _id;
-  data[length-7] = _category;
-  data[length-8] = _type;
+  length += _size;
 
-  rcp_crc = crc_calculate(data, length-3);
-  data[length-2] = lowByte(rcp_crc);
-  data[length-3] = highByte(rcp_crc);
-  return true;
-}
-
-bool RCPTopic::getMSG_changeColor(binary_t color_r, binary_t color_g, binary_t color_b, binary_t* data, rcp_size_t &length){
-  _color_b = color_b;
-  _color_g = color_g;
-  _color_r = color_r;
-  getMSG_changeColor(data, length);
   return true;
 }
 
 bool RCPTopic::getMSG_changeColor(binary_t* data, rcp_size_t &length){
-  length = 9; // 1 for topic cat, 1 for topic ID, 3 color bytes, 1 for msg type, 2 for CRC, 1 for end bit
-  data[8] = length;
-  data[5] = RCP_MSG_RECOLOR_TOPIC;
-  data[4] = _color_b;
-  data[3] = _color_g;
-  data[2] = _color_r;
-  data[1] = _id;
-  data[0] = _category;
+  length = 0;
 
-  rcp_crc = crc_calculate(data, length-3);
-  data[length-2] = lowByte(rcp_crc);
-  data[length-3] =highByte(rcp_crc);
+  data[length] = RCP_MSG_RECOLOR_TOPIC;
+  length += 1;
+
+  data[length] = _id;
+  length += 1;
+
+  data[length] = _category;
+  length += 1;
+
+  data[length] = _color_r;
+  length += 1;
+
+  data[length] = _color_g;
+  length += 1;
+
+  data[length] = _color_b;
+  length += 1;
+
   return true;
 }
 
-//For Transmission purposes only
+RCP_msg_type_t getMessageType(binary_t* data, rcp_size_t length){
+  return (RCP_msg_type_t)data[0];
+}
+
+ID_t getMessageID(binary_t* data, rcp_size_t length){
+  return (ID_t)data[1];
+}
+
+RCP_cat_t getMessageCat(binary_t* data, rcp_size_t length){
+  return (RCP_cat_t)data[2];
+}
+
+RCPTopic* GetRCPTopicFromMsg(binary_t* data, rcp_size_t length, bool createIfNull){
+  ID_t id = getMessageID( data, length);
+  RCP_cat_t category = getMessageCat( data, length);
+  RCPTopic* topic = GetRCPTopic(category, id);
+  if(topic == NULL){
+    rcp_size_t * currentIDs;
+    RCPTopic ** array;
+    getRCPArrayFromCategory(category, &currentIDs, &array);
+
+    if(*currentIDs >= MAX_TOPIC_ID || id >= MAX_TOPIC_ID){
+      return NULL;
+    }else if (createIfNull){
+      for(ID_t newID = (ID_t) *currentIDs; newID<=id; newID++)
+      {
+        (*currentIDs)++;
+
+        RCPTopic* newTopic = new RCPTopic(category, newID, "Unknown Topic", true);
+        array[newID] = newTopic;
+        newTopic->setTransmissionFresh(true);
+      }
+    }
+  }
+  return topic;
+}
+
+//For Transmission receiving purposes only
+bool RCPTopic::rawColorSet(binary_t* data, rcp_size_t length){
+  if(length!=3){
+    return false;
+  }
+  _color_r = data[0];
+  _color_g = data[1];
+  _color_b = data[2];
+  _isDisplayValueFresh = false;
+  _isColorFresh = true;
+  return true;
+}
+
+//For Transmission receiving purposes only
 bool RCPTopic::rawDataSet(RCP_type_t type, binary_t* data, rcp_size_t length){
   if(length > MAX_TOPIC_DATA_LENGTH){
     length = MAX_TOPIC_DATA_LENGTH;
   }
-  if(_type != RCP_TYPE_NULL && (_type != type || _size != length)){
-    free(_data);
-  }
   if(_size != length || _type != type){
-      _type = type;
-      _size = length;
-      _data = (binary_t*)malloc(_size); //For speed we do not want to reallocate though at the cost of space
+    //For speed we do not want to reallocate though at the cost of space
+    if(_type != RCP_TYPE_NULL){
+      free(_data);
+    }
+    _type = type;
+    _size = length;
+    _data = (binary_t*)malloc(_size); 
   }
 
   memcpy(_data, data, _size);
-  _isDataFresh = false;
-  _isTransmissionFresh = true;
+  _isDisplayValueFresh = false;
 
   return true;
 }

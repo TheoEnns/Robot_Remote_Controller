@@ -4,21 +4,27 @@ Author: Theodore Enns
 
 //Compile Flags for Debug
 // #define DEBUG_CONTROL_IO 1
-#define RUN_RCP_TESTS 1
+// #define RUN_RCP_TESTS 1
 // #define DEBUG_THREAD_TIME 1
  
 #include "RCP_Topic.hpp" 
 #include "RCP_Core_Topics.hpp"
-#include "RCP_Controller.hpp"
-// #include "RCP_Communications.hpp" 
-#include "RCP_Menu.hpp"
 #include "RCP_IO_Controller_Configuration.hpp"
-#include "RCP_Tests.hpp" 
-#include "ESP32_Sound.hpp" 
+#include "RCP_Controller.hpp"
 #include "RCP_Packet_Transmission.hpp"
 
+#include "RCP_Communications.hpp" 
+
+#include "RCP_Menu.hpp"
+#include "ESP32_Sound.hpp" 
+
+#ifdef RUN_RCP_TESTS
+#include "RCP_Tests.hpp" 
+#endif
+
+RCPRadio myRadio(&Serial1); 
+RCPComm myCommunicator(&myRadio, RCP_ControlHeartBeat);
 RCPMenu rDisp;
-RCPRadio RCPRadio(&Serial1);
 
 unsigned long elapse;
 unsigned long heartBeatTimer=0;
@@ -81,7 +87,7 @@ void loop() {
     elapse = micros();
     rcp_size_t length = 15;
     // uint8_t * packet = RCP_ControlHeartBeat->getByteArray(&length);
-    // RCPRadio.sendPacketToSerial(packet, length);
+    // myRadio.sendPacketToSerial(packet, length);
     elapse = micros() - elapse;
     // Serial.write(packet, length);
     // Serial.println(" ");

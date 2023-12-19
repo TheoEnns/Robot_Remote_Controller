@@ -12,13 +12,13 @@ class RCPRadio{
   private:
     Stream * SerialX;
 
-    size_t bLength; //Size of send and receive buffers
     int finishedPacketLength = 0;
 
     uint8_t * sBuffer; //buffer of data to be sent
+    uint8_t * rBuffer; //buffer of data being received
+    size_t bLength = 512; //Size of send and receive buffers
     size_t sLength = 0; //current size of data to be sent
 
-    uint8_t * rBuffer; //buffer of data being received
     int lastRead = -1; //last received character, held for escape sequence parsing
     size_t readIdx = 0; //current length of received data
 
@@ -45,6 +45,10 @@ class RCPRadio{
 
     uint8_t * getPacket();
     size_t getPacketLength();
+
+    uint8_t * get_rBuffer();
+    uint8_t * get_sBuffer();
+    size_t get_buffer_length();
 };
 
 RCPRadio::RCPRadio(Stream * _SerialX, size_t _bLength){
@@ -167,6 +171,18 @@ int RCPRadio::readSerialIntoBuffer(){
 
 uint8_t * RCPRadio::getPacket(){
   return rBuffer;
+}
+
+uint8_t * RCPRadio::get_rBuffer(){
+  return rBuffer;
+}
+
+uint8_t * RCPRadio::get_sBuffer(){
+  return rBuffer;
+}
+
+size_t RCPRadio::get_buffer_length(){
+  return bLength;
 }
 
 size_t RCPRadio::getPacketLength(){

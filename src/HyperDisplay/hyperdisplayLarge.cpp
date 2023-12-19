@@ -872,7 +872,7 @@ void        hyperdisplay::show( wind_info_t * wind ){   // Outputs the current w
 			}
 		}
 	#else
-		#warning "HyperDisplay Default Font Not Included. Printing will not work without a custom implementation"
+		//#warning "HyperDisplay Default Font Not Included. Printing will not work without a custom implementation"
 		void hyperdisplay::getCharInfo(uint8_t character, char_info_t * character_info) 
 		{
 			// A blank implementation of getCharInfo for when the target does not support <avr/pgmspace.h>

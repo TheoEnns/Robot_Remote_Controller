@@ -22,7 +22,7 @@ Purpose: This library standardizes interfaces to displays of many types.
 #include <Arduino.h>
 
 #ifndef HYPERDISPLAY_HAVE_CUSTOM_CONFIG
-#warning "No custom configuration supplied for hyperdisplay, using default"
+//#warning "No custom configuration supplied for hyperdisplay, using default"
 #include "hyperdisplayLarge_default_conf.h" // The default configuration in case one is not provided by the user
 #endif
 

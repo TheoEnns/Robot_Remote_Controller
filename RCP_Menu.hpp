@@ -776,7 +776,7 @@ void RCPMenu::drawValues(){
       // Skip
     }else{
       RCPTopic* newTopic = array[topDisplayID[currentCategory] + indx];
-      if(!newTopic->getFresh()){
+      if(!newTopic->getDisplayFresh()){
         ILI9341_color_16_t topic_color = myTFT.rgbTo16b( newTopic->getRed(), newTopic->getGreen(), newTopic->getBlue());
         myTFT.pCurrentWindow = (&(topicValueWind[indx]));
         myTFT.setCurrentWindowColorSequence((color_t)&topic_color);
